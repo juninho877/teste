@@ -88,6 +88,7 @@ class Database {
             'logo_banner_1' => 'imgelementos/semlogo.png',
             'logo_banner_2' => 'imgelementos/semlogo.png',
             'logo_banner_3' => 'imgelementos/semlogo.png',
+            'logo_movie_banner' => 'imgelementos/semlogo.png', // Nova entrada para logos de filmes/séries
             'background_banner_1' => 'fzstore/Img/background_banner_1.png',
             'background_banner_2' => 'fzstore/Img/background_banner_2.jpg',
             'background_banner_3' => 'fzstore/Img/background_banner_3.png',
@@ -114,6 +115,24 @@ class Database {
                 ");
                 $stmt->execute([$user['id'], $imageKey, $imagePath]);
             }
+        }
+        
+        // Adicionar logo_movie_banner para usuários existentes que não têm essa configuração
+        $stmt = $this->connection->prepare("
+            SELECT u.id 
+            FROM usuarios u 
+            LEFT JOIN user_images ui ON u.id = ui.user_id AND ui.image_key = 'logo_movie_banner'
+            WHERE ui.user_id IS NULL
+        ");
+        $stmt->execute();
+        $usersWithoutMovieLogo = $stmt->fetchAll();
+        
+        foreach ($usersWithoutMovieLogo as $user) {
+            $stmt = $this->connection->prepare("
+                INSERT IGNORE INTO user_images (user_id, image_key, image_path, upload_type) 
+                VALUES (?, 'logo_movie_banner', 'imgelementos/semlogo.png', 'default')
+            ");
+            $stmt->execute([$user['id']]);
         }
     }
 }

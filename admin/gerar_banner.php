@@ -5,6 +5,9 @@ if (!isset($_SESSION["usuario"])) {
     exit();
 }
 
+// Incluir classes necessárias
+require_once 'classes/UserImage.php';
+
 // Configuração da API
 $apiKey = 'ec8237f367023fbadd38ab6a1596b40c';
 $language = 'pt-BR';
@@ -181,29 +184,21 @@ try {
         return $rounded;
     }
 
-    // Carregar logo
-    $logoJsonPath = 'api/fzstore/logo_banner_1.json';
-    try {
-        $logoJson = @file_get_contents($logoJsonPath);
-        if ($logoJson !== false) {
-            $logoData = json_decode($logoJson, true);
-            if (!empty($logoData) && isset($logoData[0]['ImageName'])) {
-                $iconPath = str_replace('../', '', $logoData[0]['ImageName']);
-                if (file_exists($iconPath)) {
-                    $icon = @imagecreatefrompng($iconPath);
-                    if ($icon !== false) {
-                        $iconWidth = 240;
-                        $iconHeight = 240;
-                        $iconX = 1000;
-                        $iconY = 600;
-                        imagecopyresampled($image, $icon, $iconX, $iconY, 0, 0, $iconWidth, $iconHeight, imagesx($icon), imagesy($icon));
-                        imagedestroy($icon);
-                    }
-                }
-            }
+    // Carregar logo do usuário para banners de filmes/séries
+    $userImage = new UserImage();
+    $userId = $_SESSION['user_id'];
+    $logoContent = $userImage->getImageContent($userId, 'logo_movie_banner');
+    
+    if ($logoContent !== false) {
+        $icon = @imagecreatefromstring($logoContent);
+        if ($icon !== false) {
+            $iconWidth = 240;
+            $iconHeight = 240;
+            $iconX = 1000;
+            $iconY = 600;
+            imagecopyresampled($image, $icon, $iconX, $iconY, 0, 0, $iconWidth, $iconHeight, imagesx($icon), imagesy($icon));
+            imagedestroy($icon);
         }
-    } catch (Exception $e) {
-        error_log("Erro ao carregar logo: " . $e->getMessage());
     }
 
     // Adicionar imagem de dispositivos

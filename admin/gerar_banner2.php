@@ -1,10 +1,13 @@
 <?php
-
 session_start();
 if (!isset($_SESSION["usuario"])) {
     header("Location: login.php");
     exit();
 }
+
+// Incluir classes necessárias
+require_once 'classes/UserImage.php';
+
 $apiKey = 'ec8237f367023fbadd38ab6a1596b40c';
 $language = 'pt-BR';
 if (!isset($_GET['name'])) {
@@ -83,34 +86,28 @@ function wrapText($text, $font, $fontSize, $maxWidth) {
     $wrappedText .= trim($line);
     return $wrappedText;
 }
-$logoJsonPath = 'api/fzstore/logo_banner_1.json';
-try {
-    $logoJson = file_get_contents($logoJsonPath);
-    if ($logoJson === false) {
-        throw new Exception("Não foi possível ler o arquivo JSON");
+
+// Carregar logo do usuário para banners de filmes/séries
+$userImage = new UserImage();
+$userId = $_SESSION['user_id'];
+$logoContent = $userImage->getImageContent($userId, 'logo_movie_banner');
+
+if ($logoContent !== false) {
+    $icon = @imagecreatefromstring($logoContent);
+    if ($icon !== false) {
+        $logoLarguraDesejada = 150;
+        $logoPosX = 6; $logoPosY = 10;
+        $logoWidthOriginal = imagesx($icon);
+        $logoHeightOriginal = imagesy($icon);
+        $logoHeight = (int)($logoHeightOriginal * ($logoLarguraDesejada / $logoWidthOriginal));
+        $logoRedimensionada = imagecreatetruecolor($logoLarguraDesejada, $logoHeight);
+        imagealphablending($logoRedimensionada, false); imagesavealpha($logoRedimensionada, true);
+        imagecopyresampled($logoRedimensionada, $icon, 0, 0, 0, 0, $logoLarguraDesejada, $logoHeight, $logoWidthOriginal, $logoHeightOriginal);
+        imagecopy($image, $logoRedimensionada, $logoPosX, $logoPosY, 0, 0, $logoLarguraDesejada, $logoHeight);
+        imagedestroy($icon); imagedestroy($logoRedimensionada);
     }
-    $logoData = json_decode($logoJson, true);
-    if (json_last_error() !== JSON_ERROR_NONE || empty($logoData)) {
-        throw new Exception("JSON inválido ou vazio");
-    }
-    $iconPath = str_replace('../', '', $logoData[0]['ImageName']);
-    if (!file_exists($iconPath)) {
-        throw new Exception("Arquivo de logo não encontrado: " . $iconPath);
-    }
-    $posterY = 80;
-    $icon = imagecreatefrompng($iconPath);
-    if ($icon === false) {
-        throw new Exception("Não foi possível carregar a imagem da logo");
-    }
-    $iconWidth = 240;
-    $iconHeight = 240;
-    $iconX = 1000;
-    $iconY = 600;
-    imagecopyresampled($image, $icon, $iconX, $iconY, 0, 0, $iconWidth, $iconHeight, imagesx($icon), imagesy($icon));
-    imagedestroy($icon);
-} catch (Exception $e) {
-    error_log("Erro ao carregar logo: " . $e->getMessage());
 }
+
 $urlDispositivos = 'https://i.ibb.co/qLZQSbBp/Design-sem-nome-9.png';
 $imgDispositivosResource = imagecreatefrompng($urlDispositivos);
 if ($imgDispositivosResource !== false) {

@@ -673,7 +673,11 @@ if (!isset($_SESSION["usuario"])) {
                     <div class="nav-section-title">Personalização</div>
                     <a href="logo.php" class="nav-item">
                         <i class="fas fa-image"></i>
-                        <span>Logos</span>
+                        <span>Logos Futebol</span>
+                    </a>
+                    <a href="logo_movie.php" class="nav-item">
+                        <i class="fas fa-film"></i>
+                        <span>Logo Filmes/Séries</span>
                     </a>
                     <a href="background.php" class="nav-item">
                         <i class="fas fa-photo-video"></i>
