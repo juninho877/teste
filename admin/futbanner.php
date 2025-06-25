@@ -82,193 +82,219 @@ if (isset($_GET['banner'])) {
     }
 ?>
 
-<style>
-    .futbanner-container {
-        padding: 20px;
-        color: #f8f9fa;
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-    .futbanner-title { 
-        color: #ffffff; 
-        margin-bottom: 30px; 
-        text-align: center; 
-    }
+<div class="page-header">
+    <h1 class="page-title">Banners de Jogos de Hoje</h1>
+    <p class="page-subtitle">Modelo <?php echo $tipo_banner; ?> - <?php echo count($jogos); ?> jogos disponíveis</p>
+</div>
 
-    .banner-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 15px;
-    }
-
-    @media (min-width: 992px) {
-        .banner-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    .banner-section {
-        background-color: #2c3034; 
-        border-radius: 8px;
-        padding: 15px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        display: flex; 
-        flex-direction: column;
-    }
-    .banner-title { 
-        color: #4e73df; 
-        margin-bottom: 15px; 
-        text-align: center; 
-    }
-    .banner-image {
-        max-width: 100%; 
-        height: auto; 
-        border: 1px solid #4e73df;
-        border-radius: 6px; 
-        display: block; 
-        margin: 0 auto 15px auto;
-        min-height: 200px;
-        background: #1a1d20;
-        position: relative;
-    }
-    .banner-image.loading {
-        background: #1a1d20 url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBzdHJva2U9IiM0ZTczZGYiPjxnIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMSAxKSIgc3Ryb2tlLXdpZHRoPSIyIj48Y2lyY2xlIHN0cm9rZS1vcGFjaXR5PSIuNSIgY3g9IjE4IiBjeT0iMTgiIHI9IjE4Ii8+PHBhdGggZD0ibTM5IDM5YzAtOS45NC04LjA2LTE4LTE4LTE4Ij48YW5pbWF0ZVRyYW5zZm9ybSBhdHRyaWJ1dGVOYW1lPSJ0cmFuc2Zvcm0iIHR5cGU9InJvdGF0ZSIgZnJvbT0iMCAxOCAxOCIgdG89IjM2MCAxOCAxOCIgZHVyPSIxcyIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiLz48L3BhdGg+PC9nPjwvZz48L3N2Zz4=') no-repeat center center;
-    }
-    .btn-download-container { 
-        text-align: center; 
-        margin-top: auto; 
-    }
-    .btn-download {
-        background-color: #4e73df; 
-        color: white; 
-        border: none; 
-        padding: 10px 20px;
-        border-radius: 5px; 
-        text-decoration: none; 
-        display: inline-block;
-        margin: 5px; 
-        transition: all 0.3s;
-    }
-    .btn-download:hover { 
-        background-color: #3a5bbf; 
-        transform: translateY(-2px); 
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); 
-    }
-    .btn-download-all { 
-        background-color: #1cc88a; 
-        margin-bottom: 30px; 
-        display: inline-block; 
-    }
-    .btn-download-all:hover { 
-        background-color: #17a673; 
-    }
-    .no-games { 
-        color: #f8f9fa; 
-        text-align: center; 
-        padding: 20px; 
-        background-color: #2c3034; 
-        border-radius: 8px; 
-    }
-    .error-banner {
-        background: #dc3545;
-        color: white;
-        padding: 10px;
-        border-radius: 4px;
-        text-align: center;
-        margin: 10px 0;
-        font-size: 14px;
-    }
-    .retry-btn {
-        background: #ffc107;
-        color: #212529;
-        border: none;
-        padding: 5px 10px;
-        border-radius: 3px;
-        cursor: pointer;
-        margin-top: 5px;
-        font-size: 12px;
-    }
-    .retry-btn:hover {
-        background: #e0a800;
-    }
-</style>
-
-<div class="futbanner-container">
-    <h1 class="futbanner-title">Banners de Jogos de Hoje (Modelo <?php echo $tipo_banner; ?>)</h1>
-    <div class="text-center" style="margin-bottom: 20px;">
-        <a href="<?php echo basename(__FILE__); ?>" class="btn-download" style="background-color: #f6c23e; color: #5a5c69;">
-            <i class="fas fa-arrow-left"></i> Voltar para Seleção
+<div class="mb-6 flex flex-wrap gap-4">
+    <a href="<?php echo basename(__FILE__); ?>" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i>
+        Voltar para Seleção
+    </a>
+    <?php if (!empty($jogos)): ?>
+        <a href="<?php echo $geradorScript; ?>?download_all=1" class="btn btn-success" target="_blank">
+            <i class="fas fa-download"></i>
+            Baixar Todos (ZIP)
         </a>
-    </div>
+    <?php endif; ?>
+</div>
 
-    <?php if (empty($jogos)) : ?>
-        <div class="no-games"><p>Nenhum jogo disponível no momento.</p></div>
-    <?php else : ?>
-        <div class="text-center">
-            <a href="<?php echo $geradorScript; ?>?download_all=1" class="btn-download btn-download-all">
-                <i class="fas fa-file-archive"></i> Baixar Todos (ZIP)
-            </a>
+<?php if (empty($jogos)): ?>
+    <div class="card">
+        <div class="card-body text-center py-12">
+            <div class="mb-4">
+                <i class="fas fa-futbol text-6xl text-gray-300"></i>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Nenhum jogo disponível</h3>
+            <p class="text-muted">Não há jogos programados para hoje no momento.</p>
         </div>
-
-        <div class="banner-grid">
-            <?php foreach ($gruposDeJogos as $index => $grupo): ?>
-                <div class="banner-section">
-                    <h2 class="banner-title">Banner Parte <?php echo $index + 1; ?></h2>
-                    <div id="banner-container-<?php echo $index; ?>">
+    </div>
+<?php else: ?>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <?php foreach ($gruposDeJogos as $index => $grupo): ?>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Banner Parte <?php echo $index + 1; ?></h3>
+                    <p class="card-subtitle"><?php echo count($grupo); ?> jogos neste banner</p>
+                </div>
+                <div class="card-body">
+                    <div class="banner-preview-container">
                         <img id="banner-img-<?php echo $index; ?>" 
                              src="" 
                              alt="Banner Parte <?php echo $index + 1; ?>" 
-                             class="banner-image loading"
+                             class="banner-preview-image loading"
                              data-grupo="<?php echo $index; ?>"
                              data-script="<?php echo $geradorScript; ?>"
                              style="display: none;">
-                        <div id="error-<?php echo $index; ?>" class="error-banner" style="display: none;">
-                            <div>Erro ao carregar banner</div>
-                            <button class="retry-btn" onclick="retryBanner(<?php echo $index; ?>)">
+                        <div id="loading-<?php echo $index; ?>" class="loading-placeholder">
+                            <div class="loading-spinner"></div>
+                            <p class="loading-text">Carregando banner...</p>
+                        </div>
+                        <div id="error-<?php echo $index; ?>" class="error-placeholder" style="display: none;">
+                            <i class="fas fa-exclamation-triangle text-4xl text-danger-500 mb-2"></i>
+                            <p class="error-text">Erro ao carregar banner</p>
+                            <button class="btn btn-secondary btn-sm mt-2" onclick="retryBanner(<?php echo $index; ?>)">
                                 <i class="fas fa-redo"></i> Tentar Novamente
                             </button>
                         </div>
                     </div>
-                    <div class="btn-download-container">
-                        <a href="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>&download=1" class="btn-download">
-                            <i class="fas fa-download"></i> Baixar
-                        </a>
-                    </div>
+                    <a href="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>&download=1" 
+                       class="btn btn-primary w-full mt-4" target="_blank">
+                        <i class="fas fa-download"></i>
+                        Baixar Banner
+                    </a>
                 </div>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
-</div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
+
+<style>
+    .banner-preview-container {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16/9;
+        background: var(--bg-secondary);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 250px;
+    }
+
+    .banner-preview-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: opacity 0.3s ease;
+    }
+
+    .loading-placeholder,
+    .error-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: var(--text-muted);
+        padding: 2rem;
+    }
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--border-color);
+        border-top: 3px solid var(--primary-500);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1rem;
+    }
+
+    .loading-text,
+    .error-text {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .flex-wrap {
+        flex-wrap: wrap;
+    }
+
+    .py-12 {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+
+    .text-6xl {
+        font-size: 3.75rem;
+        line-height: 1;
+    }
+
+    .text-xl {
+        font-size: 1.25rem;
+        line-height: 1.75rem;
+    }
+
+    .font-semibold {
+        font-weight: 600;
+    }
+
+    .mb-2 {
+        margin-bottom: 0.5rem;
+    }
+
+    .mb-4 {
+        margin-bottom: 1rem;
+    }
+
+    .mb-6 {
+        margin-bottom: 1.5rem;
+    }
+
+    .mt-2 {
+        margin-top: 0.5rem;
+    }
+
+    .mt-4 {
+        margin-top: 1rem;
+    }
+
+    .w-full {
+        width: 100%;
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+    }
+
+    /* Dark theme adjustments */
+    [data-theme="dark"] .text-gray-300 {
+        color: var(--text-muted);
+    }
+
+    [data-theme="dark"] .text-danger-500 {
+        color: #ef4444;
+    }
+</style>
 
 <script>
 let retryCount = {};
-const maxRetries = 5;
+const maxRetries = 3;
 
 function loadBanner(index, script) {
     const img = document.getElementById(`banner-img-${index}`);
+    const loading = document.getElementById(`loading-${index}`);
     const error = document.getElementById(`error-${index}`);
-    const container = document.getElementById(`banner-container-${index}`);
     
-    if (!img || !error) return;
+    if (!img || !loading || !error) return;
     
     // Reset estado
     img.style.display = 'none';
+    loading.style.display = 'flex';
     error.style.display = 'none';
-    img.className = 'banner-image loading';
     
-    // Criar URL com cache busting mais agressivo
+    // Criar URL com cache busting
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(7);
-    const cacheBust = Math.floor(Math.random() * 1000000);
-    const url = `${script}?grupo=${index}&_t=${timestamp}&_r=${random}&_cb=${cacheBust}&_v=${Math.random()}`;
+    const url = `${script}?grupo=${index}&_t=${timestamp}&_r=${random}`;
     
     console.log(`Carregando banner ${index}: ${url}`);
     
-    // Timeout de 30 segundos
+    // Timeout de 15 segundos
     const timeout = setTimeout(() => {
         console.log(`Timeout para banner ${index}`);
-        showError(index, 'Timeout: Banner demorou muito para carregar');
-    }, 30000);
+        showError(index, 'Timeout ao carregar banner');
+    }, 15000);
     
     img.onload = function() {
         clearTimeout(timeout);
@@ -282,8 +308,8 @@ function loadBanner(index, script) {
         }
         
         // Mostrar imagem
-        this.className = 'banner-image';
         this.style.display = 'block';
+        loading.style.display = 'none';
         error.style.display = 'none';
         
         // Reset retry count
@@ -302,21 +328,17 @@ function loadBanner(index, script) {
 
 function showError(index, message) {
     const img = document.getElementById(`banner-img-${index}`);
+    const loading = document.getElementById(`loading-${index}`);
     const error = document.getElementById(`error-${index}`);
     
-    if (img) {
-        img.style.display = 'none';
-        img.className = 'banner-image';
-    }
-    
+    if (img) img.style.display = 'none';
+    if (loading) loading.style.display = 'none';
     if (error) {
-        error.style.display = 'block';
-        error.innerHTML = `
-            <div>${message}</div>
-            <button class="retry-btn" onclick="retryBanner(${index})">
-                <i class="fas fa-redo"></i> Tentar Novamente (${retryCount[index] || 0}/${maxRetries})
-            </button>
-        `;
+        error.style.display = 'flex';
+        const errorText = error.querySelector('.error-text');
+        if (errorText) {
+            errorText.textContent = `${message} (Tentativa ${retryCount[index] || 0}/${maxRetries})`;
+        }
     }
 }
 
@@ -355,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
         banners.forEach((banner, i) => {
             setTimeout(() => {
                 loadBanner(banner.index, banner.script);
-            }, i * 1000); // 1 segundo entre cada banner
+            }, i * 500); // 500ms entre cada banner
         });
     <?php endif; ?>
 });
@@ -410,65 +432,6 @@ window.retryBanner = retryBanner;
 <?php endif; ?>
 
 <style>
-    .banner-preview-container {
-        position: relative;
-        width: 100%;
-        aspect-ratio: 16/9;
-        background: var(--bg-secondary);
-        border-radius: var(--border-radius);
-        overflow: hidden;
-        border: 1px solid var(--border-color);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .banner-preview-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: opacity 0.3s ease;
-    }
-
-    .py-12 {
-        padding-top: 3rem;
-        padding-bottom: 3rem;
-    }
-
-    .text-6xl {
-        font-size: 3.75rem;
-        line-height: 1;
-    }
-
-    .text-xl {
-        font-size: 1.25rem;
-        line-height: 1.75rem;
-    }
-
-    .font-semibold {
-        font-weight: 600;
-    }
-
-    .mb-2 {
-        margin-bottom: 0.5rem;
-    }
-
-    .mb-4 {
-        margin-bottom: 1rem;
-    }
-
-    .mt-4 {
-        margin-top: 1rem;
-    }
-
-    .w-full {
-        width: 100%;
-    }
-
-    [data-theme="dark"] .text-warning-500 {
-        color: #f59e0b;
-    }
-
     .group:hover {
         transform: translateY(-2px);
     }
@@ -487,6 +450,10 @@ window.retryBanner = retryBanner;
 
     .group-hover\:bg-primary-600:hover {
         background-color: var(--primary-600);
+    }
+
+    [data-theme="dark"] .text-warning-500 {
+        color: #f59e0b;
     }
 </style>
 
