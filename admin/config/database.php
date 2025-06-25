@@ -6,9 +6,9 @@ class Database {
     
     // Configurações do MySQL - ALTERE ESTAS CONFIGURAÇÕES
     private $host = 'localhost';
-    private $dbname = 'futbanner_db';
-    private $username = 'root';
-    private $password = '';
+    private $dbname = 'teste';
+    private $username = 'teste';
+    private $password = '3gh7a~31L';
     private $charset = 'utf8mb4';
     
     private function __construct() {
