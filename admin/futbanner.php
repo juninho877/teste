@@ -1040,54 +1040,6 @@ window.abortAllOperations = abortAllOperations;
     // Tela de seleção de modelo
 ?>
 
-<!-- Modal de Progresso para Seleção de Modelos -->
-<div id="modelsProgressModal" class="progress-modal">
-    <div class="progress-modal-content">
-        <div class="progress-header">
-            <h3 class="progress-title">
-                <i class="fas fa-palette"></i>
-                Carregando Prévias dos Modelos
-            </h3>
-            <p class="progress-subtitle">Aguarde enquanto preparamos as prévias...</p>
-        </div>
-        
-        <div class="progress-body">
-            <div class="progress-bar-container">
-                <div class="progress-bar">
-                    <div id="modelsProgressBarFill" class="progress-bar-fill"></div>
-                </div>
-                <div class="progress-text">
-                    <span id="modelsProgressPercent">0%</span>
-                    <span id="modelsProgressStatus">Iniciando...</span>
-                </div>
-            </div>
-            
-            <div class="banners-status">
-                <?php for ($i = 1; $i <= 3; $i++): ?>
-                    <div id="model-status-item-<?php echo $i; ?>" class="banner-status-item">
-                        <div class="status-icon">
-                            <i class="fas fa-clock text-muted"></i>
-                        </div>
-                        <span class="status-text">Banner Modelo <?php echo $i; ?></span>
-                        <div class="status-indicator">
-                            <div class="status-spinner" style="display: none;">
-                                <i class="fas fa-spinner fa-spin"></i>
-                            </div>
-                        </div>
-                    </div>
-                <?php endfor; ?>
-            </div>
-            
-            <div class="modal-actions mt-4">
-                <button id="skipPreviewsBtn" class="btn btn-secondary w-full">
-                    <i class="fas fa-forward"></i>
-                    Pular Prévias e Escolher Modelo
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="page-header">
     <h1 class="page-title">
         <i class="fas fa-futbol text-primary-500 mr-3"></i>
@@ -1380,17 +1332,6 @@ window.abortAllOperations = abortAllOperations;
         background: var(--bg-secondary);
     }
 
-    /* Ações do Modal */
-    .modal-actions {
-        border-top: 1px solid var(--border-color);
-        padding-top: 1.5rem;
-        margin-top: 1.5rem;
-    }
-
-    .mt-4 {
-        margin-top: 1rem;
-    }
-
     /* Animações especiais */
     @keyframes modelCardSlideIn {
         from {
@@ -1448,70 +1389,6 @@ let modelLoadingAborted = false;
 let activeModelTimeouts = [];
 let activeModelImages = [];
 
-function showModelsProgressModal() {
-    const modal = document.getElementById('modelsProgressModal');
-    modal.classList.add('active');
-}
-
-function hideModelsProgressModal() {
-    const modal = document.getElementById('modelsProgressModal');
-    modal.classList.remove('active');
-}
-
-function updateModelsProgress() {
-    const percent = Math.round((modelsLoaded / totalModels) * 100);
-    const progressBar = document.getElementById('modelsProgressBarFill');
-    const progressPercent = document.getElementById('modelsProgressPercent');
-    const progressStatus = document.getElementById('modelsProgressStatus');
-    
-    progressBar.style.width = percent + '%';
-    progressPercent.textContent = percent + '%';
-    
-    if (modelsLoaded === totalModels) {
-        progressStatus.textContent = 'Prévias carregadas!';
-        setTimeout(() => {
-            hideModelsProgressModal();
-        }, 1500);
-    } else {
-        progressStatus.textContent = `${modelsLoaded}/${totalModels} prévias carregadas`;
-    }
-}
-
-function updateModelStatus(modelNumber, status) {
-    const statusItem = document.getElementById(`model-status-item-${modelNumber}`);
-    const statusIcon = statusItem.querySelector('.status-icon i');
-    const statusSpinner = statusItem.querySelector('.status-spinner');
-    const cardStatus = document.getElementById(`model-status-${modelNumber}`);
-    
-    // Remove todas as classes de status
-    statusItem.classList.remove('loading', 'success', 'error');
-    cardStatus.className = 'model-status';
-    
-    switch (status) {
-        case 'loading':
-            statusItem.classList.add('loading');
-            cardStatus.classList.add('status-loading');
-            statusIcon.className = 'fas fa-clock text-primary-500';
-            if (statusSpinner) statusSpinner.style.display = 'block';
-            cardStatus.innerHTML = '<div class="status-loading"><i class="fas fa-spinner fa-spin text-primary-500"></i></div>';
-            break;
-        case 'success':
-            statusItem.classList.add('success');
-            cardStatus.classList.add('status-success');
-            statusIcon.className = 'fas fa-check-circle text-success-500';
-            if (statusSpinner) statusSpinner.style.display = 'none';
-            cardStatus.innerHTML = '<div class="status-success"><i class="fas fa-check-circle text-success-500"></i></div>';
-            break;
-        case 'error':
-            statusItem.classList.add('error');
-            cardStatus.classList.add('status-error');
-            statusIcon.className = 'fas fa-times-circle text-danger-500';
-            if (statusSpinner) statusSpinner.style.display = 'none';
-            cardStatus.innerHTML = '<div class="status-error"><i class="fas fa-times-circle text-danger-500"></i></div>';
-            break;
-    }
-}
-
 function abortModelLoading() {
     modelLoadingAborted = true;
     console.log('🛑 Abortando carregamento de prévias dos modelos...');
@@ -1532,9 +1409,6 @@ function abortModelLoading() {
     });
     activeModelImages = [];
     
-    // Fechar modal
-    hideModelsProgressModal();
-    
     console.log('✅ Carregamento de prévias abortado');
 }
 
@@ -1544,6 +1418,7 @@ function loadModel(modelNumber) {
     const img = document.getElementById(`model-img-${modelNumber}`);
     const loading = document.getElementById(`model-loading-${modelNumber}`);
     const error = document.getElementById(`model-error-${modelNumber}`);
+    const status = document.getElementById(`model-status-${modelNumber}`);
     
     if (!img || !loading || !error) return;
     
@@ -1551,7 +1426,7 @@ function loadModel(modelNumber) {
     activeModelImages.push(img);
     
     // Atualizar status
-    updateModelStatus(modelNumber, 'loading');
+    status.innerHTML = '<div class="status-loading"><i class="fas fa-spinner fa-spin text-primary-500"></i></div>';
     
     // Reset estado
     img.style.display = 'none';
@@ -1571,9 +1446,6 @@ function loadModel(modelNumber) {
         if (modelLoadingAborted) return;
         console.log(`⏰ Timeout para modelo ${modelNumber} após 60 segundos`);
         showModelError(modelNumber, 'Timeout ao carregar prévia');
-        updateModelStatus(modelNumber, 'error');
-        modelsLoaded++;
-        updateModelsProgress();
     }, 60000); // 60 segundos
     
     // Adicionar à lista de timeouts ativos
@@ -1595,20 +1467,19 @@ function loadModel(modelNumber) {
         if (this.naturalWidth === 0 || this.naturalHeight === 0) {
             console.log(`❌ Modelo ${modelNumber} carregou mas tem dimensões inválidas`);
             showModelError(modelNumber, 'Prévia inválida');
-            updateModelStatus(modelNumber, 'error');
         } else {
             // Mostrar imagem
             this.style.display = 'block';
             loading.style.display = 'none';
             error.style.display = 'none';
-            updateModelStatus(modelNumber, 'success');
+            status.innerHTML = '<div class="status-success"><i class="fas fa-check-circle text-success-500"></i></div>';
             
             // Reset retry count
             modelRetryCount[modelNumber] = 0;
         }
         
         modelsLoaded++;
-        updateModelsProgress();
+        checkAllModelsLoaded();
     };
     
     img.onerror = function() {
@@ -1623,9 +1494,6 @@ function loadModel(modelNumber) {
         
         console.log(`❌ Erro ao carregar modelo ${modelNumber}`);
         showModelError(modelNumber, 'Erro ao carregar prévia');
-        updateModelStatus(modelNumber, 'error');
-        modelsLoaded++;
-        updateModelsProgress();
     };
     
     // Iniciar carregamento
@@ -1636,6 +1504,7 @@ function showModelError(modelNumber, message) {
     const img = document.getElementById(`model-img-${modelNumber}`);
     const loading = document.getElementById(`model-loading-${modelNumber}`);
     const error = document.getElementById(`model-error-${modelNumber}`);
+    const status = document.getElementById(`model-status-${modelNumber}`);
     
     if (img) img.style.display = 'none';
     if (loading) loading.style.display = 'none';
@@ -1646,6 +1515,12 @@ function showModelError(modelNumber, message) {
             errorText.textContent = `${message} (Tentativa ${modelRetryCount[modelNumber] || 0}/${maxModelRetries})`;
         }
     }
+    if (status) {
+        status.innerHTML = '<div class="status-error"><i class="fas fa-times-circle text-danger-500"></i></div>';
+    }
+    
+    modelsLoaded++;
+    checkAllModelsLoaded();
 }
 
 function retryModel(modelNumber) {
@@ -1653,7 +1528,6 @@ function retryModel(modelNumber) {
     
     if (modelRetryCount[modelNumber] > maxModelRetries) {
         showModelError(modelNumber, 'Máximo de tentativas excedido');
-        updateModelStatus(modelNumber, 'error');
         return;
     }
     
@@ -1666,6 +1540,13 @@ function retryModel(modelNumber) {
             loadModel(modelNumber);
         }
     }, 1000);
+}
+
+function checkAllModelsLoaded() {
+    if (modelsLoaded >= totalModels) {
+        console.log('✅ Todos os modelos processados');
+        enableFreeNavigation();
+    }
 }
 
 function enableFreeNavigation() {
@@ -1731,16 +1612,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Reset variáveis
         modelLoadingAborted = false;
         modelsLoaded = 0;
-        
-        // Mostrar modal de progresso
-        showModelsProgressModal();
-        
-        // Configurar botão de pular prévias
-        const skipBtn = document.getElementById('skipPreviewsBtn');
-        skipBtn.addEventListener('click', function() {
-            console.log('⏭️ Usuário optou por pular as prévias');
-            abortModelLoading();
-        });
         
         // Carregar modelos com delay mínimo
         for (let i = 1; i <= totalModels; i++) {
