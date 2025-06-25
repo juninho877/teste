@@ -8,7 +8,7 @@ if (!isset($_SESSION["usuario"])) {
 $pageTitle = isset($_GET['banner']) ? "Gerador de Banner" : "Selecionar Modelo de Banner";
 include "includes/header.php";
 
-// Funções de criptografia e busca de dados (otimizadas)
+// Funções de criptografia e busca de dados (simplificadas)
 function getChaveRemota() {
     $url_base64 = 'aHR0cHM6Ly9hcGlmdXQucHJvamVjdHguY2xpY2svQXV0b0FwaS9BRVMvY29uZmlna2V5LnBocA==';
     $auth_base64 = 'dmFxdW9UQlpFb0U4QmhHMg==';
@@ -23,8 +23,8 @@ function getChaveRemota() {
         CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Content-Length: ' . strlen($postData)],
         CURLOPT_POSTFIELDS => $postData,
         CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_TIMEOUT => 3, // Reduzido
-        CURLOPT_CONNECTTIMEOUT => 2 // Reduzido
+        CURLOPT_TIMEOUT => 5,
+        CURLOPT_CONNECTTIMEOUT => 3
     ]);
     $response = curl_exec($ch);
     curl_close($ch);
@@ -36,7 +36,7 @@ function descriptografarURL($urlCodificada, $chave) {
     return openssl_decrypt($url_criptografada, 'aes-256-cbc', $chave, 0, $iv);
 }
 
-// Obter dados dos jogos com timeout reduzido
+// Obter dados dos jogos
 $chave_secreta = getChaveRemota();
 $parametro_criptografado = 'SVI0Sjh1MTJuRkw1bmFyeFdPb3cwOXA2TFo3RWlSQUxLbkczaGE4MXBiMWhENEpOWkhkSFZoeURaWFVDM1lTZzo6RNBu5BBhzmFRkTPPSikeJg==';
 $json_url = $chave_secreta ? descriptografarURL($parametro_criptografado, $chave_secreta) : null;
@@ -46,8 +46,8 @@ if ($json_url) {
     $ch = curl_init($json_url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 3); // Reduzido
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2); // Reduzido
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
     $json_content = curl_exec($ch);
     curl_close($ch);
 
@@ -93,10 +93,10 @@ if (isset($_GET['banner'])) {
         Voltar para Seleção
     </a>
     <?php if (!empty($jogos)): ?>
-        <button onclick="downloadAllBanners('<?php echo $geradorScript; ?>')" class="btn btn-success" id="downloadAllBtn">
+        <a href="<?php echo $geradorScript; ?>?download_all=1" class="btn btn-success" target="_blank">
             <i class="fas fa-download"></i>
             Baixar Todos (ZIP)
-        </button>
+        </a>
     <?php endif; ?>
 </div>
 
@@ -119,21 +119,17 @@ if (isset($_GET['banner'])) {
                     <p class="card-subtitle"><?php echo count($grupo); ?> jogos neste banner</p>
                 </div>
                 <div class="card-body">
-                    <div class="banner-preview-container" id="preview-<?php echo $index; ?>">
-                        <div class="banner-loading-placeholder">
-                            <div class="loading-spinner"></div>
-                            <span>Carregando prévia...</span>
-                        </div>
-                        <img data-src="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>" 
+                    <div class="banner-preview-container">
+                        <img src="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>" 
                              alt="Banner Parte <?php echo $index + 1; ?>" 
-                             class="banner-preview-image lazy-load"
-                             style="opacity: 0;">
+                             class="banner-preview-image"
+                             loading="lazy">
                     </div>
-                    <button onclick="downloadSingleBanner('<?php echo $geradorScript; ?>', <?php echo $index; ?>)" 
-                            class="btn btn-primary w-full mt-4">
+                    <a href="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>&download=1" 
+                       class="btn btn-primary w-full mt-4" target="_blank">
                         <i class="fas fa-download"></i>
                         Baixar Banner
-                    </button>
+                    </a>
                 </div>
             </div>
         <?php endforeach; ?>
@@ -169,15 +165,11 @@ if (isset($_GET['banner'])) {
                     <p class="card-subtitle">Estilo profissional e moderno</p>
                 </div>
                 <div class="card-body">
-                    <div class="banner-preview-container" id="model-preview-<?php echo $i; ?>">
-                        <div class="banner-loading-placeholder">
-                            <div class="loading-spinner"></div>
-                            <span>Carregando prévia...</span>
-                        </div>
-                        <img data-src="gerar_fut<?php echo $i > 1 ? '_' . $i : ''; ?>.php?grupo=0" 
+                    <div class="banner-preview-container">
+                        <img src="gerar_fut<?php echo $i > 1 ? '_' . $i : ''; ?>.php?grupo=0" 
                              alt="Prévia do Banner <?php echo $i; ?>" 
-                             class="banner-preview-image lazy-load"
-                             style="opacity: 0;">
+                             class="banner-preview-image"
+                             loading="lazy">
                     </div>
                     <a href="?banner=<?php echo $i; ?>" class="btn btn-primary w-full mt-4 group-hover:bg-primary-600">
                         <i class="fas fa-check"></i>
@@ -198,6 +190,9 @@ if (isset($_GET['banner'])) {
         border-radius: var(--border-radius);
         overflow: hidden;
         border: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .banner-preview-image {
@@ -207,35 +202,8 @@ if (isset($_GET['banner'])) {
         transition: opacity 0.3s ease;
     }
 
-    .banner-loading-placeholder {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
+    .banner-preview-image[loading="lazy"] {
         background: var(--bg-secondary);
-        color: var(--text-muted);
-        font-size: 0.875rem;
-        gap: 1rem;
-        z-index: 2;
-    }
-
-    .loading-spinner {
-        width: 32px;
-        height: 32px;
-        border: 3px solid var(--border-color);
-        border-top: 3px solid var(--primary-500);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
     }
 
     .flex-wrap {
@@ -290,247 +258,49 @@ if (isset($_GET['banner'])) {
         color: #f59e0b;
     }
 
-    /* Loading overlay */
-    .loading-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.7);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s ease;
+    /* Loading state */
+    .banner-preview-image {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill='%23e2e8f0'%3E%3Ccircle cx='50' cy='50' r='4'%3E%3Canimate attributeName='opacity' values='1;0;1' dur='1s' repeatCount='indefinite'/%3E%3C/circle%3E%3Ccircle cx='30' cy='50' r='4'%3E%3Canimate attributeName='opacity' values='1;0;1' dur='1s' begin='0.2s' repeatCount='indefinite'/%3E%3C/circle%3E%3Ccircle cx='70' cy='50' r='4'%3E%3Canimate attributeName='opacity' values='1;0;1' dur='1s' begin='0.4s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 50px 50px;
     }
 
-    .loading-overlay.active {
-        opacity: 1;
-        visibility: visible;
-    }
-
-    .loading-content {
-        background: var(--bg-primary);
-        padding: 2rem;
-        border-radius: var(--border-radius);
-        text-align: center;
-        box-shadow: var(--shadow-xl);
-        max-width: 300px;
-    }
-
-    .loading-content .loading-spinner {
-        width: 48px;
-        height: 48px;
-        margin-bottom: 1rem;
+    .banner-preview-image[src] {
+        background-image: none;
     }
 </style>
 
-<!-- Loading Overlay -->
-<div class="loading-overlay" id="loadingOverlay">
-    <div class="loading-content">
-        <div class="loading-spinner"></div>
-        <h3 class="font-semibold mb-2">Processando...</h3>
-        <p class="text-muted text-sm">Aguarde enquanto geramos seus banners</p>
-        <button onclick="cancelOperation()" class="btn btn-secondary mt-4">
-            <i class="fas fa-times"></i>
-            Cancelar
-        </button>
-    </div>
-</div>
-
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    let currentRequests = [];
-    let isNavigating = false;
-    let abortController = null;
-
-    // Lazy loading otimizado das imagens
-    const lazyImages = document.querySelectorAll('.lazy-load');
-    const imageObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting && !isNavigating) {
-                const img = entry.target;
-                const placeholder = img.previousElementSibling;
-                
-                // Criar AbortController para esta requisição
-                abortController = new AbortController();
-                
-                // Timeout mais agressivo
-                const timeout = setTimeout(() => {
-                    if (img.style.opacity === '0') {
-                        placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Timeout</span>';
-                        if (abortController) abortController.abort();
-                    }
-                }, 5000); // Reduzido para 5 segundos
-
-                img.onload = () => {
-                    clearTimeout(timeout);
-                    if (!isNavigating) {
-                        img.style.opacity = '1';
-                        if (placeholder) placeholder.style.display = 'none';
-                    }
-                };
-
-                img.onerror = () => {
-                    clearTimeout(timeout);
-                    if (placeholder) {
-                        placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Erro</span>';
-                    }
-                };
-
-                // Usar fetch com AbortController para melhor controle
-                fetch(img.dataset.src, { 
-                    signal: abortController.signal,
-                    method: 'GET',
-                    cache: 'force-cache'
-                }).then(response => {
-                    if (response.ok && !isNavigating) {
-                        img.src = img.dataset.src;
-                    }
-                }).catch(error => {
-                    if (error.name !== 'AbortError' && placeholder) {
-                        placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Erro de rede</span>';
-                    }
-                });
-
-                observer.unobserve(img);
+document.addEventListener('DOMContentLoaded', function() {
+    // Simples e eficaz - sem complicações
+    const images = document.querySelectorAll('.banner-preview-image');
+    
+    images.forEach(function(img) {
+        // Timeout para mostrar erro se demorar muito
+        const timeout = setTimeout(function() {
+            if (!img.complete) {
+                img.style.opacity = '0.5';
+                img.alt = 'Erro ao carregar banner';
             }
+        }, 10000); // 10 segundos
+        
+        img.addEventListener('load', function() {
+            clearTimeout(timeout);
+            img.style.opacity = '1';
         });
-    }, {
-        rootMargin: '50px' // Carrega quando está 50px da viewport
-    });
-
-    lazyImages.forEach(img => imageObserver.observe(img));
-
-    // Interceptar navegação para cancelar operações
-    function handleNavigation() {
-        isNavigating = true;
-        cancelAllRequests();
-        hideLoading();
-    }
-
-    // Interceptar cliques em links
-    document.addEventListener('click', (e) => {
-        const link = e.target.closest('a[href]');
-        if (link && !link.href.includes('#') && !link.target) {
-            handleNavigation();
-        }
-    });
-
-    // Interceptar mudanças de página
-    window.addEventListener('beforeunload', handleNavigation);
-    window.addEventListener('pagehide', handleNavigation);
-
-    // Permitir navegação via teclas
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            handleNavigation();
-        }
-    });
-});
-
-function downloadSingleBanner(script, index) {
-    showLoading();
-    
-    // Usar window.open para evitar travamento
-    const downloadUrl = `${script}?grupo=${index}&download=1`;
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = `banner_parte_${index + 1}.png`;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    // Esconder loading rapidamente
-    setTimeout(hideLoading, 1500);
-}
-
-function downloadAllBanners(script) {
-    showLoading();
-    
-    // Usar window.open para evitar travamento
-    const downloadUrl = `${script}?download_all=1`;
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = `banners_completos.zip`;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    // Esconder loading após tempo razoável
-    setTimeout(hideLoading, 2500);
-}
-
-function showLoading() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) {
-        overlay.classList.add('active');
-    }
-}
-
-function hideLoading() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) {
-        overlay.classList.remove('active');
-    }
-}
-
-function cancelOperation() {
-    cancelAllRequests();
-    hideLoading();
-}
-
-function cancelAllRequests() {
-    // Cancelar AbortController se existir
-    if (window.abortController) {
-        window.abortController.abort();
-    }
-    
-    // Cancelar outras requisições ativas
-    if (window.currentRequests) {
-        window.currentRequests.forEach(request => {
-            if (request.abort) request.abort();
+        
+        img.addEventListener('error', function() {
+            clearTimeout(timeout);
+            img.style.opacity = '0.5';
+            img.alt = 'Erro ao carregar banner';
         });
-        window.currentRequests = [];
-    }
-}
-
-// Otimização: Preload inteligente apenas das imagens próximas
-function preloadNearbyImages() {
-    const images = document.querySelectorAll('.banner-preview-image[data-src]:not([src])');
-    const viewportHeight = window.innerHeight;
-    
-    images.forEach((img, index) => {
-        // Preload apenas as primeiras 2 imagens
-        if (index < 2) {
-            const rect = img.getBoundingClientRect();
-            if (rect.top < viewportHeight + 100) { // 100px de margem
-                if (img.dataset.src && !img.src) {
-                    img.src = img.dataset.src;
-                }
-            }
-        }
     });
-}
-
-// Executar preload após delay mínimo
-setTimeout(preloadNearbyImages, 200);
-
-// Preload otimizado no scroll
-let scrollTimeout;
-window.addEventListener('scroll', () => {
-    clearTimeout(scrollTimeout);
-    scrollTimeout = setTimeout(preloadNearbyImages, 150);
-}, { passive: true });
-
-// Cleanup ao sair da página
-window.addEventListener('unload', () => {
-    cancelAllRequests();
+    
+    // Permitir navegação livre - sem travamentos
+    window.addEventListener('beforeunload', function() {
+        // Não fazer nada que possa travar
+    });
 });
 </script>
 

@@ -2,6 +2,18 @@
 session_start();
 date_default_timezone_set('America/Sao_Paulo');
 
+// Verificação de sessão primeiro
+if (!isset($_SESSION["usuario"])) {
+    http_response_code(403);
+    header('Content-Type: image/png');
+    $im = imagecreatetruecolor(600, 100);
+    imagefill($im, 0, 0, imagecolorallocate($im, 255, 255, 255));
+    imagestring($im, 5, 10, 40, "Erro: Acesso Negado.", imagecolorallocate($im, 0, 0, 0));
+    imagepng($im);
+    imagedestroy($im);
+    exit();
+}
+
 // Configurações otimizadas
 define('CLOUDINARY_CLOUD_NAME', 'dvi4kawwq');
 define('LOGO_OVERRIDES', [
@@ -12,7 +24,7 @@ define('LOGO_OVERRIDES', [
     'Tanabi' => 'https://ssl.gstatic.com/onebox/media/sports/logos/_0PCb1YBKcxp8eXBCCtZpg_96x96.png',
 ]);
 
-// Cache de imagens em memória
+// Cache simples
 $imageCache = [];
 
 function carregarEscudo(string $nomeTime, ?string $url, int $maxSize = 60) {
@@ -48,8 +60,8 @@ function _processarImagemDeUrl(string $url, int $maxSize) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 1);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
     curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (compatible; FutBanner/1.0)');
     
     $imageContent = curl_exec($ch);
@@ -128,8 +140,8 @@ function getChaveRemota() {
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Content-Length: ' . strlen($postData)]);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $postData); 
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
     
     $response = curl_exec($ch);
     curl_close($ch);
@@ -232,8 +244,8 @@ function gerarBanner($im, $jogos, $grupoJogos, $padding, $heightPorJogo, $width,
         desenharTexto($im, $canais, $centerX, $yTop + 90, $branco, $fontSize, 0);
         
         // Limpar memória apenas se não estiver no cache
-        if (!isset($imageCache[md5($escudo1_url . $tamEscudo)])) imagedestroy($imgEscudo1);
-        if (!isset($imageCache[md5($escudo2_url . $tamEscudo)])) imagedestroy($imgEscudo2);
+        if (!isset($GLOBALS['imageCache'][md5($escudo1_url . $tamEscudo)])) imagedestroy($imgEscudo1);
+        if (!isset($GLOBALS['imageCache'][md5($escudo2_url . $tamEscudo)])) imagedestroy($imgEscudo2);
         
         $yAtual += $heightPorJogo;
     }
@@ -288,18 +300,6 @@ function centralizarTexto($larguraImagem, $tamanhoFonte, $fonte, $texto) {
     return ($larguraImagem - $larguraTexto) / 2;
 }
 
-// Verificação de sessão
-if (!isset($_SESSION["usuario"])) {
-    http_response_code(403);
-    header('Content-Type: image/png');
-    $im = imagecreatetruecolor(600, 100);
-    imagefill($im, 0, 0, imagecolorallocate($im, 255, 255, 255));
-    imagestring($im, 5, 10, 40, "Erro: Acesso Negado.", imagecolorallocate($im, 0, 0, 0));
-    imagepng($im);
-    imagedestroy($im);
-    exit();
-}
-
 $chave_secreta = getChaveRemota();
 $parametro_criptografado = 'SVI0Sjh1MTJuRkw1bmFyeFdPb3cwOXA2TFo3RWlSQUxLbkczaGE4MXBiMWhENEpOWkhkSFZoeURaWFVDM1lTZzo6RNBu5BBhzmFRkTPPSikeJg==';
 $json_url = $chave_secreta ? descriptografarURL($parametro_criptografado, $chave_secreta) : null;
@@ -309,8 +309,8 @@ if ($json_url) {
     $ch = curl_init($json_url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
     $json_content = curl_exec($ch);
     curl_close($ch);
     

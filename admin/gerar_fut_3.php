@@ -2,6 +2,18 @@
 session_start();
 date_default_timezone_set('America/Sao_Paulo');
 
+// Verificação de sessão primeiro
+if (!isset($_SESSION["usuario"])) {
+    http_response_code(403);
+    header('Content-Type: image/png');
+    $im = imagecreatetruecolor(600, 100);
+    imagefill($im, 0, 0, imagecolorallocate($im, 255, 255, 255));
+    imagestring($im, 5, 10, 40, "Erro: Acesso Negado.", imagecolorallocate($im, 0, 0, 0));
+    imagepng($im);
+    imagedestroy($im);
+    exit();
+}
+
 // Configurações otimizadas
 define('CLOUDINARY_CLOUD_NAME', 'dwrikepvg');
 define('LOGO_OVERRIDES', [
@@ -14,7 +26,7 @@ define('LOGO_OVERRIDES', [
     'Mundial de Clubes FIFA' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/2025_FIFA_Club_World_Cup.svg/1200px-2025_FIFA_Club_World_Cup.svg.png',
 ]);
 
-// Cache de imagens em memória
+// Cache simples
 $imageCache = [];
 
 function desenhar_retangulo_arredondado($image, $x, $y, $width, $height, $radius, $color) {
@@ -53,8 +65,8 @@ function carregarImagemDeUrl(string $url, int $maxSize) {
         CURLOPT_RETURNTRANSFER => 1,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_CONNECTTIMEOUT => 2,
-        CURLOPT_TIMEOUT => 4,
+        CURLOPT_CONNECTTIMEOUT => 1,
+        CURLOPT_TIMEOUT => 3,
         CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; FutBanner/1.0)'
     ]);
     
@@ -90,8 +102,8 @@ function carregarLogoCanalComAlturaFixa(string $url, int $alturaFixa = 50) {
         CURLOPT_RETURNTRANSFER => 1,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_CONNECTTIMEOUT => 2,
-        CURLOPT_TIMEOUT => 4,
+        CURLOPT_CONNECTTIMEOUT => 1,
+        CURLOPT_TIMEOUT => 3,
         CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; FutBanner/1.0)'
     ]);
     
@@ -180,8 +192,8 @@ function getChaveRemota() {
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Content-Length: ' . strlen($postData)]);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $postData); 
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
     
     $response = curl_exec($ch);
     curl_close($ch);
@@ -264,8 +276,8 @@ function gerarBanner($im, $jogos, $grupoJogos, $padding, $heightPorJogo, $width,
         if($imgEscudo2) imagecopy($im, $imgEscudo2, 1130, $yTop + 15, 0, 0, imagesx($imgEscudo2), imagesy($imgEscudo2));
         
         // Limpar memória apenas se não estiver no cache
-        if($imgEscudo1 && !isset($imageCache[md5($escudo1_url . 180)])) imagedestroy($imgEscudo1);
-        if($imgEscudo2 && !isset($imageCache[md5($escudo2_url . 180)])) imagedestroy($imgEscudo2);
+        if($imgEscudo1 && !isset($GLOBALS['imageCache'][md5($escudo1_url . 180)])) imagedestroy($imgEscudo1);
+        if($imgEscudo2 && !isset($GLOBALS['imageCache'][md5($escudo2_url . 180)])) imagedestroy($imgEscudo2);
         
         $fonteNomes = __DIR__ . '/fonts/CalSans-Regular.ttf';
         $tamanhoNomes = 25; $corNomes = $preto;
@@ -368,18 +380,6 @@ function gerarBanner($im, $jogos, $grupoJogos, $padding, $heightPorJogo, $width,
     }
 }
 
-// Verificação de sessão
-if (!isset($_SESSION["usuario"])) {
-    http_response_code(403);
-    header('Content-Type: image/png');
-    $im = imagecreatetruecolor(600, 100);
-    imagefill($im, 0, 0, imagecolorallocate($im, 255, 255, 255));
-    imagestring($im, 5, 10, 40, "Erro: Acesso Negado.", imagecolorallocate($im, 0, 0, 0));
-    imagepng($im);
-    imagedestroy($im);
-    exit();
-}
-
 $chave_secreta = getChaveRemota();
 $parametro_criptografado = 'SVI0Sjh1MTJuRkw1bmFyeFdPb3cwOXA2TFo3RWlSQUxLbkczaGE4MXBiMWhENEpOWkhkSFZoeURaWFVDM1lTZzo6RNBu5BBhzmFRkTPPSikeJg==';
 $json_url = $chave_secreta ? descriptografarURL($parametro_criptografado, $chave_secreta) : null;
@@ -389,8 +389,8 @@ if ($json_url) {
     $ch = curl_init($json_url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
     $json_content = curl_exec($ch);
     curl_close($ch);
     

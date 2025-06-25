@@ -2,6 +2,18 @@
 session_start();
 date_default_timezone_set('America/Sao_Paulo');
 
+// Verificação de sessão primeiro
+if (!isset($_SESSION["usuario"])) {
+    http_response_code(403);
+    header('Content-Type: image/png');
+    $im = imagecreatetruecolor(600, 100);
+    imagefill($im, 0, 0, imagecolorallocate($im, 255, 255, 255));
+    imagestring($im, 5, 10, 40, "Erro: Acesso Negado.", imagecolorallocate($im, 0, 0, 0));
+    imagepng($im);
+    imagedestroy($im);
+    exit();
+}
+
 // Configurações otimizadas
 define('CLOUDINARY_CLOUD_NAME', 'dwrikepvg');
 define('LOGO_OVERRIDES', [
@@ -14,7 +26,7 @@ define('LOGO_OVERRIDES', [
     'Mundial de Clubes FIFA' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/2025_FIFA_Club_World_Cup.svg/1200px-2025_FIFA_Club_World_Cup.svg.png',
 ]);
 
-// Cache de imagens em memória
+// Cache simples
 $imageCache = [];
 
 function desenhar_retangulo_arredondado($image, $x, $y, $width, $height, $radius, $color) {
@@ -33,7 +45,6 @@ function desenhar_retangulo_arredondado($image, $x, $y, $width, $height, $radius
 function carregarImagemDeUrl(string $url, int $maxSize) {
     global $imageCache;
     
-    // Verificar cache
     $cacheKey = md5($url . $maxSize);
     if (isset($imageCache[$cacheKey])) {
         return $imageCache[$cacheKey];
@@ -44,7 +55,7 @@ function carregarImagemDeUrl(string $url, int $maxSize) {
 
     if ($extensao === 'svg') {
         $cloudinaryCloudName = CLOUDINARY_CLOUD_NAME;
-        if (empty($cloudinaryCloudName)) return false;
+        if (empty($cloudinaryCloudName)) return $imageCache[$cacheKey] = false;
         $urlParaCarregar = "https://res.cloudinary.com/{$cloudinaryCloudName}/image/fetch/f_png/" . urlencode($url);
     }
     
@@ -54,11 +65,10 @@ function carregarImagemDeUrl(string $url, int $maxSize) {
         CURLOPT_RETURNTRANSFER => 1,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_CONNECTTIMEOUT => 2, // Reduzido para 2 segundos
-        CURLOPT_TIMEOUT => 4, // Reduzido para 4 segundos
+        CURLOPT_CONNECTTIMEOUT => 1,
+        CURLOPT_TIMEOUT => 3,
         CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; FutBanner/1.0)',
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_ENCODING => 'gzip,deflate'
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1
     ]);
     
     $imageContent = curl_exec($ch);
@@ -66,21 +76,18 @@ function carregarImagemDeUrl(string $url, int $maxSize) {
     curl_close($ch);
 
     if ($imageContent === false || $httpCode >= 400) {
-        $imageCache[$cacheKey] = false;
-        return false;
+        return $imageCache[$cacheKey] = false;
     }
     
     $img = @imagecreatefromstring($imageContent);
     if (!$img) {
-        $imageCache[$cacheKey] = false;
-        return false;
+        return $imageCache[$cacheKey] = false;
     }
 
     $w = imagesx($img); $h = imagesy($img);
     if ($w == 0 || $h == 0) {
         imagedestroy($img);
-        $imageCache[$cacheKey] = false;
-        return false;
+        return $imageCache[$cacheKey] = false;
     }
     
     $scale = min($maxSize / $w, $maxSize / $h, 1.0);
@@ -91,9 +98,7 @@ function carregarImagemDeUrl(string $url, int $maxSize) {
     imagecopyresampled($imgResized, $img, 0, 0, 0, 0, $newW, $newH, $w, $h);
     imagedestroy($img);
     
-    // Armazenar no cache
-    $imageCache[$cacheKey] = $imgResized;
-    return $imgResized;
+    return $imageCache[$cacheKey] = $imgResized;
 }
 
 function carregarLogoCanalComAlturaFixa(string $url, int $alturaFixa = 50) {
@@ -103,8 +108,8 @@ function carregarLogoCanalComAlturaFixa(string $url, int $alturaFixa = 50) {
         CURLOPT_RETURNTRANSFER => 1,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_CONNECTTIMEOUT => 2,
-        CURLOPT_TIMEOUT => 4,
+        CURLOPT_CONNECTTIMEOUT => 1,
+        CURLOPT_TIMEOUT => 3,
         CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; FutBanner/1.0)'
     ]);
     
@@ -196,8 +201,8 @@ function getChaveRemota() {
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Content-Length: ' . strlen($postData)]);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $postData); 
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
     
     $response = curl_exec($ch);
     curl_close($ch);
@@ -284,9 +289,9 @@ function gerarBanner($im, $jogos, $grupoJogos, $padding, $heightPorJogo, $width,
         if($imgEscudo2) imagecopy($im, $imgEscudo2, 650, $yTop + 35, 0, 0, imagesx($imgEscudo2), imagesy($imgEscudo2));
         
         // Limpar memória apenas se não estiver no cache
-        if($imgliga && !isset($imageCache[md5($liga_img_url . 140)])) imagedestroy($imgliga);
-        if($imgEscudo1 && !isset($imageCache[md5($escudo1_url . 140)])) imagedestroy($imgEscudo1);
-        if($imgEscudo2 && !isset($imageCache[md5($escudo2_url . 140)])) imagedestroy($imgEscudo2);
+        if($imgliga && !isset($GLOBALS['imageCache'][md5($liga_img_url . 140)])) imagedestroy($imgliga);
+        if($imgEscudo1 && !isset($GLOBALS['imageCache'][md5($escudo1_url . 140)])) imagedestroy($imgEscudo1);
+        if($imgEscudo2 && !isset($GLOBALS['imageCache'][md5($escudo2_url . 140)])) imagedestroy($imgEscudo2);
         
         $fonteNomes = __DIR__ . '/fonts/CalSans-Regular.ttf';
         $tamanhoNomes = 30; $corNomes = $preto;
@@ -385,19 +390,7 @@ function gerarBanner($im, $jogos, $grupoJogos, $padding, $heightPorJogo, $width,
     }
 }
 
-// Verificação de sessão otimizada
-if (!isset($_SESSION["usuario"])) {
-    http_response_code(403);
-    header('Content-Type: image/png');
-    $im = imagecreatetruecolor(600, 100);
-    imagefill($im, 0, 0, imagecolorallocate($im, 255, 255, 255));
-    imagestring($im, 5, 10, 40, "Erro: Acesso Negado.", imagecolorallocate($im, 0, 0, 0));
-    imagepng($im);
-    imagedestroy($im);
-    exit();
-}
-
-// Buscar dados dos jogos com cache
+// Buscar dados dos jogos
 $chave_secreta = getChaveRemota();
 $parametro_criptografado = 'SVI0Sjh1MTJuRkw1bmFyeFdPb3cwOXA2TFo3RWlSQUxLbkczaGE4MXBiMWhENEpOWkhkSFZoeURaWFVDM1lTZzo6RNBu5BBhzmFRkTPPSikeJg==';
 $json_url = $chave_secreta ? descriptografarURL($parametro_criptografado, $chave_secreta) : null;
@@ -407,8 +400,8 @@ if ($json_url) {
     $ch = curl_init($json_url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
     $json_content = curl_exec($ch);
     curl_close($ch);
     
@@ -532,7 +525,7 @@ if (isset($_GET['download_all']) && $_GET['download_all'] == 1) {
     }
 
     header('Content-Type: image/png');
-    header('Cache-Control: public, max-age=300'); // Cache por 5 minutos
+    header('Cache-Control: public, max-age=300');
     imagepng($im);
     imagedestroy($im);
     exit;
