@@ -82,6 +82,47 @@ if (isset($_GET['banner'])) {
     }
 ?>
 
+<!-- Modal de Progresso -->
+<div id="progressModal" class="progress-modal">
+    <div class="progress-modal-content">
+        <div class="progress-header">
+            <h3 class="progress-title">
+                <i class="fas fa-magic"></i>
+                Gerando Banners
+            </h3>
+            <p class="progress-subtitle">Aguarde enquanto criamos seus banners...</p>
+        </div>
+        
+        <div class="progress-body">
+            <div class="progress-bar-container">
+                <div class="progress-bar">
+                    <div id="progressBarFill" class="progress-bar-fill"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="progressPercent">0%</span>
+                    <span id="progressStatus">Iniciando...</span>
+                </div>
+            </div>
+            
+            <div class="banners-status">
+                <?php foreach ($gruposDeJogos as $index => $grupo): ?>
+                    <div id="banner-status-<?php echo $index; ?>" class="banner-status-item">
+                        <div class="status-icon">
+                            <i class="fas fa-clock text-muted"></i>
+                        </div>
+                        <span class="status-text">Banner Parte <?php echo $index + 1; ?></span>
+                        <div class="status-indicator">
+                            <div class="status-spinner" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="page-header">
     <h1 class="page-title">Banners de Jogos de Hoje</h1>
     <p class="page-subtitle">Modelo <?php echo $tipo_banner; ?> - <?php echo count($jogos); ?> jogos disponíveis</p>
@@ -151,6 +192,207 @@ if (isset($_GET['banner'])) {
 <?php endif; ?>
 
 <style>
+    /* Modal de Progresso */
+    .progress-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(8px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .progress-modal.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .progress-modal-content {
+        background: var(--bg-primary);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-xl);
+        border: 1px solid var(--border-color);
+        width: 90%;
+        max-width: 500px;
+        max-height: 80vh;
+        overflow-y: auto;
+        animation: modalSlideIn 0.3s ease-out;
+    }
+
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-50px) scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .progress-header {
+        padding: 2rem 2rem 1rem;
+        text-align: center;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .progress-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .progress-title i {
+        color: var(--primary-500);
+    }
+
+    .progress-subtitle {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+    }
+
+    .progress-body {
+        padding: 2rem;
+    }
+
+    .progress-bar-container {
+        margin-bottom: 2rem;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 12px;
+        background: var(--bg-tertiary);
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
+        border-radius: 6px;
+        width: 0%;
+        transition: width 0.5s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .progress-bar-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+
+    .progress-text {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.875rem;
+    }
+
+    #progressPercent {
+        font-weight: 600;
+        color: var(--primary-500);
+        font-size: 1rem;
+    }
+
+    #progressStatus {
+        color: var(--text-secondary);
+    }
+
+    .banners-status {
+        space-y: 0.75rem;
+    }
+
+    .banner-status-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem;
+        background: var(--bg-secondary);
+        border-radius: var(--border-radius-sm);
+        transition: var(--transition);
+    }
+
+    .banner-status-item.loading {
+        background: var(--primary-50);
+        border-left: 3px solid var(--primary-500);
+    }
+
+    .banner-status-item.success {
+        background: var(--success-50);
+        border-left: 3px solid var(--success-500);
+    }
+
+    .banner-status-item.error {
+        background: var(--danger-50);
+        border-left: 3px solid var(--danger-500);
+    }
+
+    [data-theme="dark"] .banner-status-item.loading {
+        background: rgba(59, 130, 246, 0.1);
+    }
+
+    [data-theme="dark"] .banner-status-item.success {
+        background: rgba(34, 197, 94, 0.1);
+    }
+
+    [data-theme="dark"] .banner-status-item.error {
+        background: rgba(239, 68, 68, 0.1);
+    }
+
+    .status-icon {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .status-text {
+        flex: 1;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .status-indicator {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .status-spinner {
+        color: var(--primary-500);
+    }
+
+    /* Estilos existentes */
     .banner-preview-container {
         position: relative;
         width: 100%;
@@ -270,6 +512,65 @@ if (isset($_GET['banner'])) {
 <script>
 let retryCount = {};
 const maxRetries = 3;
+let totalBanners = 0;
+let loadedBanners = 0;
+let failedBanners = 0;
+
+function showProgressModal() {
+    const modal = document.getElementById('progressModal');
+    modal.classList.add('active');
+}
+
+function hideProgressModal() {
+    const modal = document.getElementById('progressModal');
+    modal.classList.remove('active');
+}
+
+function updateProgress() {
+    const percent = Math.round((loadedBanners / totalBanners) * 100);
+    const progressBar = document.getElementById('progressBarFill');
+    const progressPercent = document.getElementById('progressPercent');
+    const progressStatus = document.getElementById('progressStatus');
+    
+    progressBar.style.width = percent + '%';
+    progressPercent.textContent = percent + '%';
+    
+    if (loadedBanners === totalBanners) {
+        progressStatus.textContent = 'Concluído!';
+        setTimeout(() => {
+            hideProgressModal();
+        }, 1500);
+    } else {
+        progressStatus.textContent = `${loadedBanners}/${totalBanners} banners carregados`;
+    }
+}
+
+function updateBannerStatus(index, status) {
+    const statusItem = document.getElementById(`banner-status-${index}`);
+    const statusIcon = statusItem.querySelector('.status-icon i');
+    const statusSpinner = statusItem.querySelector('.status-spinner');
+    
+    // Remove todas as classes de status
+    statusItem.classList.remove('loading', 'success', 'error');
+    
+    switch (status) {
+        case 'loading':
+            statusItem.classList.add('loading');
+            statusIcon.className = 'fas fa-clock text-primary-500';
+            statusSpinner.style.display = 'block';
+            break;
+        case 'success':
+            statusItem.classList.add('success');
+            statusIcon.className = 'fas fa-check-circle text-success-500';
+            statusSpinner.style.display = 'none';
+            break;
+        case 'error':
+            statusItem.classList.add('error');
+            statusIcon.className = 'fas fa-times-circle text-danger-500';
+            statusSpinner.style.display = 'none';
+            break;
+    }
+}
 
 function loadBanner(index, script) {
     const img = document.getElementById(`banner-img-${index}`);
@@ -277,6 +578,9 @@ function loadBanner(index, script) {
     const error = document.getElementById(`error-${index}`);
     
     if (!img || !loading || !error) return;
+    
+    // Atualizar status no modal
+    updateBannerStatus(index, 'loading');
     
     // Reset estado
     img.style.display = 'none';
@@ -290,11 +594,15 @@ function loadBanner(index, script) {
     
     console.log(`Carregando banner ${index}: ${url}`);
     
-    // Timeout de 15 segundos
+    // Timeout aumentado para 30 segundos
     const timeout = setTimeout(() => {
         console.log(`Timeout para banner ${index}`);
         showError(index, 'Timeout ao carregar banner');
-    }, 15000);
+        updateBannerStatus(index, 'error');
+        failedBanners++;
+        loadedBanners++;
+        updateProgress();
+    }, 30000);
     
     img.onload = function() {
         clearTimeout(timeout);
@@ -304,22 +612,31 @@ function loadBanner(index, script) {
         if (this.naturalWidth === 0 || this.naturalHeight === 0) {
             console.log(`Banner ${index} carregou mas tem dimensões inválidas`);
             showError(index, 'Imagem inválida');
-            return;
+            updateBannerStatus(index, 'error');
+            failedBanners++;
+        } else {
+            // Mostrar imagem
+            this.style.display = 'block';
+            loading.style.display = 'none';
+            error.style.display = 'none';
+            updateBannerStatus(index, 'success');
+            
+            // Reset retry count
+            retryCount[index] = 0;
         }
         
-        // Mostrar imagem
-        this.style.display = 'block';
-        loading.style.display = 'none';
-        error.style.display = 'none';
-        
-        // Reset retry count
-        retryCount[index] = 0;
+        loadedBanners++;
+        updateProgress();
     };
     
     img.onerror = function() {
         clearTimeout(timeout);
         console.log(`Erro ao carregar banner ${index}`);
         showError(index, 'Erro ao carregar imagem');
+        updateBannerStatus(index, 'error');
+        failedBanners++;
+        loadedBanners++;
+        updateProgress();
     };
     
     // Iniciar carregamento
@@ -347,6 +664,7 @@ function retryBanner(index) {
     
     if (retryCount[index] > maxRetries) {
         showError(index, 'Máximo de tentativas excedido');
+        updateBannerStatus(index, 'error');
         return;
     }
     
@@ -373,11 +691,18 @@ document.addEventListener('DOMContentLoaded', function() {
             <?php endforeach; ?>
         ];
         
+        totalBanners = banners.length;
+        loadedBanners = 0;
+        failedBanners = 0;
+        
+        // Mostrar modal de progresso
+        showProgressModal();
+        
         // Carregar banners com delay escalonado
         banners.forEach((banner, i) => {
             setTimeout(() => {
                 loadBanner(banner.index, banner.script);
-            }, i * 500); // 500ms entre cada banner
+            }, i * 1000); // 1 segundo entre cada banner
         });
     <?php endif; ?>
 });
