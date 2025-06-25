@@ -14,6 +14,9 @@ define('LOGO_OVERRIDES', [
 // Cache simples
 $imageCache = [];
 
+// Incluir a classe UserImage
+require_once __DIR__ . '/../classes/UserImage.php';
+
 function desenhar_retangulo_arredondado($image, $x, $y, $width, $height, $radius, $color) {
     $x1 = $x; $y1 = $y; $x2 = $x + $width; $y2 = $y + $height;
     if ($radius > $width / 2) $radius = $width / 2;
@@ -213,20 +216,37 @@ function desenharTexto($im, $texto, $x, $y, $cor, $tamanho=12, $angulo=0, $fonte
     }
 }
 
-function getImageFromJson($jsonPath) {
-    static $cache = [];
-    if (isset($cache[$jsonPath])) return $cache[$jsonPath];
+/**
+ * Nova função para buscar configuração de imagem do usuário
+ * Substitui a antiga função getImageFromJson
+ * @param int $userId ID do usuário
+ * @param string $imageKey Chave da imagem (ex: logo_banner_1, background_banner_2, etc.)
+ * @return string|false Conteúdo da imagem ou false se não encontrado
+ */
+function getUserImageConfig($userId, $imageKey) {
+    static $userImageInstance = null;
     
-    $jsonContent = @file_get_contents($jsonPath);
-    if ($jsonContent === false) return $cache[$jsonPath] = null;
+    if ($userImageInstance === null) {
+        $userImageInstance = new UserImage();
+    }
     
-    $data = json_decode($jsonContent, true);
-    if (empty($data) || !isset($data[0]['ImageName'])) return $cache[$jsonPath] = null;
+    return $userImageInstance->getImageContent($userId, $imageKey);
+}
+
+/**
+ * Função para carregar imagem do usuário como resource GD
+ * @param int $userId ID do usuário
+ * @param string $imageKey Chave da imagem
+ * @return resource|false Resource da imagem ou false se não encontrado
+ */
+function loadUserImage($userId, $imageKey) {
+    $imageContent = getUserImageConfig($userId, $imageKey);
     
-    $imagePath = str_replace('../', '', $data[0]['ImageName']);
-    if (!file_exists($imagePath)) return $cache[$jsonPath] = null;
+    if ($imageContent === false) {
+        return false;
+    }
     
-    return $cache[$jsonPath] = @file_get_contents($imagePath);
+    return @imagecreatefromstring($imageContent);
 }
 
 function centralizarTextoX($larguraImagem, $tamanhoFonte, $fonte, $texto) { 

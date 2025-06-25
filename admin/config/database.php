@@ -61,9 +61,60 @@ class Database {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
         );
+        
+        CREATE TABLE IF NOT EXISTS user_images (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            image_key VARCHAR(50) NOT NULL,
+            image_path VARCHAR(500) NOT NULL,
+            upload_type ENUM('file', 'url', 'default') DEFAULT 'file',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_user_image (user_id, image_key),
+            FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+            INDEX idx_user_image_key (user_id, image_key)
+        );
         ";
         
         $this->connection->exec($sql);
+        
+        // Inserir imagens padrão para usuários existentes
+        $this->insertDefaultImages();
+    }
+    
+    // Método para inserir imagens padrão para usuários existentes
+    private function insertDefaultImages() {
+        $defaultImages = [
+            'logo_banner_1' => 'imgelementos/semlogo.png',
+            'logo_banner_2' => 'imgelementos/semlogo.png',
+            'logo_banner_3' => 'imgelementos/semlogo.png',
+            'background_banner_1' => 'fzstore/Img/background_banner_1.png',
+            'background_banner_2' => 'fzstore/Img/background_banner_2.jpg',
+            'background_banner_3' => 'fzstore/Img/background_banner_3.png',
+            'card_banner_1' => 'fzstore/card/card_banner_1.png',
+            'card_banner_2' => 'fzstore/card/card_banner_2.png',
+            'card_banner_3' => 'fzstore/card/card_banner_3.png'
+        ];
+        
+        // Buscar usuários que não têm imagens configuradas
+        $stmt = $this->connection->prepare("
+            SELECT DISTINCT u.id 
+            FROM usuarios u 
+            LEFT JOIN user_images ui ON u.id = ui.user_id 
+            WHERE ui.user_id IS NULL
+        ");
+        $stmt->execute();
+        $usersWithoutImages = $stmt->fetchAll();
+        
+        foreach ($usersWithoutImages as $user) {
+            foreach ($defaultImages as $imageKey => $imagePath) {
+                $stmt = $this->connection->prepare("
+                    INSERT IGNORE INTO user_images (user_id, image_key, image_path, upload_type) 
+                    VALUES (?, ?, ?, 'default')
+                ");
+                $stmt->execute([$user['id'], $imageKey, $imagePath]);
+            }
+        }
     }
 }
 ?>
