@@ -124,11 +124,14 @@ if (isset($_GET['banner'])) {
 </div>
 
 <div class="page-header">
-    <h1 class="page-title">Banners de Jogos de Hoje</h1>
+    <h1 class="page-title">
+        <i class="fas fa-futbol text-primary-500 mr-3"></i>
+        Banners de Jogos de Hoje
+    </h1>
     <p class="page-subtitle">Modelo <?php echo $tipo_banner; ?> - <?php echo count($jogos); ?> jogos disponíveis</p>
 </div>
 
-<div class="mb-6 flex flex-wrap gap-4">
+<div class="banner-actions mb-6">
     <a href="<?php echo basename(__FILE__); ?>" class="btn btn-secondary">
         <i class="fas fa-arrow-left"></i>
         Voltar para Seleção
@@ -152,36 +155,52 @@ if (isset($_GET['banner'])) {
         </div>
     </div>
 <?php else: ?>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="banners-grid">
         <?php foreach ($gruposDeJogos as $index => $grupo): ?>
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Banner Parte <?php echo $index + 1; ?></h3>
-                    <p class="card-subtitle"><?php echo count($grupo); ?> jogos neste banner</p>
-                </div>
-                <div class="card-body">
-                    <div class="banner-preview-container">
-                        <img id="banner-img-<?php echo $index; ?>" 
-                             src="" 
-                             alt="Banner Parte <?php echo $index + 1; ?>" 
-                             class="banner-preview-image loading"
-                             data-grupo="<?php echo $index; ?>"
-                             data-script="<?php echo $geradorScript; ?>"
-                             style="display: none;">
-                        <div id="loading-<?php echo $index; ?>" class="loading-placeholder">
-                            <div class="loading-spinner"></div>
-                            <p class="loading-text">Carregando banner...</p>
-                        </div>
-                        <div id="error-<?php echo $index; ?>" class="error-placeholder" style="display: none;">
-                            <i class="fas fa-exclamation-triangle text-4xl text-danger-500 mb-2"></i>
-                            <p class="error-text">Erro ao carregar banner</p>
-                            <button class="btn btn-secondary btn-sm mt-2" onclick="retryBanner(<?php echo $index; ?>)">
-                                <i class="fas fa-redo"></i> Tentar Novamente
-                            </button>
+            <div class="banner-card">
+                <div class="banner-card-header">
+                    <div class="banner-info">
+                        <h3 class="banner-title">Banner Parte <?php echo $index + 1; ?></h3>
+                        <p class="banner-subtitle"><?php echo count($grupo); ?> jogos</p>
+                    </div>
+                    <div class="banner-status" id="status-<?php echo $index; ?>">
+                        <div class="status-loading">
+                            <i class="fas fa-clock text-muted"></i>
                         </div>
                     </div>
+                </div>
+                
+                <div class="banner-preview-container">
+                    <img id="banner-img-<?php echo $index; ?>" 
+                         src="" 
+                         alt="Banner Parte <?php echo $index + 1; ?>" 
+                         class="banner-preview-image"
+                         data-grupo="<?php echo $index; ?>"
+                         data-script="<?php echo $geradorScript; ?>"
+                         style="display: none;">
+                    
+                    <div id="loading-<?php echo $index; ?>" class="loading-placeholder">
+                        <div class="loading-spinner"></div>
+                        <p class="loading-text">Carregando banner...</p>
+                        <div class="loading-progress">
+                            <div class="loading-bar">
+                                <div class="loading-bar-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="error-<?php echo $index; ?>" class="error-placeholder" style="display: none;">
+                        <i class="fas fa-exclamation-triangle text-4xl text-danger-500 mb-3"></i>
+                        <p class="error-text">Erro ao carregar banner</p>
+                        <button class="btn btn-secondary btn-sm mt-3" onclick="retryBanner(<?php echo $index; ?>)">
+                            <i class="fas fa-redo"></i> Tentar Novamente
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="banner-actions">
                     <a href="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>&download=1" 
-                       class="btn btn-primary w-full mt-4" target="_blank">
+                       class="btn btn-primary w-full" target="_blank">
                         <i class="fas fa-download"></i>
                         Baixar Banner
                     </a>
@@ -192,6 +211,208 @@ if (isset($_GET['banner'])) {
 <?php endif; ?>
 
 <style>
+    /* Layout Principal dos Banners */
+    .banners-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* Responsivo: 2 colunas em telas maiores */
+    @media (min-width: 992px) {
+        .banners-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2.5rem;
+        }
+    }
+
+    /* Card do Banner */
+    .banner-card {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .banner-card:hover {
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+    }
+
+    /* Header do Card */
+    .banner-card-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bg-secondary);
+    }
+
+    .banner-info {
+        flex: 1;
+    }
+
+    .banner-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .banner-title::before {
+        content: '';
+        width: 8px;
+        height: 8px;
+        background: var(--primary-500);
+        border-radius: 50%;
+    }
+
+    .banner-subtitle {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        margin: 0;
+    }
+
+    .banner-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .status-loading i {
+        color: var(--text-muted);
+        animation: pulse 2s infinite;
+    }
+
+    .status-success i {
+        color: var(--success-500);
+    }
+
+    .status-error i {
+        color: var(--danger-500);
+    }
+
+    /* Container da Prévia */
+    .banner-preview-container {
+        position: relative;
+        width: 100%;
+        height: 300px;
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .banner-preview-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        transition: opacity 0.3s ease;
+        background: var(--bg-secondary);
+    }
+
+    /* Estados de Loading e Error */
+    .loading-placeholder,
+    .error-placeholder {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: var(--text-muted);
+        padding: 2rem;
+        background: var(--bg-secondary);
+    }
+
+    .loading-spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid var(--border-color);
+        border-top: 4px solid var(--primary-500);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1.5rem;
+    }
+
+    .loading-text,
+    .error-text {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin: 0 0 1rem 0;
+        font-weight: 500;
+    }
+
+    .loading-progress {
+        width: 100%;
+        max-width: 200px;
+        margin-top: 1rem;
+    }
+
+    .loading-bar {
+        width: 100%;
+        height: 4px;
+        background: var(--bg-tertiary);
+        border-radius: 2px;
+        overflow: hidden;
+    }
+
+    .loading-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
+        border-radius: 2px;
+        width: 0%;
+        animation: loadingProgress 3s ease-in-out infinite;
+    }
+
+    @keyframes loadingProgress {
+        0%, 100% { width: 0%; }
+        50% { width: 100%; }
+    }
+
+    /* Ações do Banner */
+    .banner-actions {
+        padding: 1.5rem;
+        background: var(--bg-primary);
+        margin-top: auto;
+    }
+
+    .banner-actions .btn {
+        font-weight: 600;
+        padding: 0.875rem 1.5rem;
+        border-radius: var(--border-radius);
+        transition: all 0.3s ease;
+    }
+
+    .banner-actions .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+
+    /* Ações Principais */
+    .banner-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 2rem;
+    }
+
     /* Modal de Progresso */
     .progress-modal {
         position: fixed;
@@ -392,63 +613,41 @@ if (isset($_GET['banner'])) {
         color: var(--primary-500);
     }
 
-    /* Estilos existentes */
-    .banner-preview-container {
-        position: relative;
-        width: 100%;
-        aspect-ratio: 16/9;
-        background: var(--bg-secondary);
-        border-radius: var(--border-radius);
-        overflow: hidden;
-        border: 1px solid var(--border-color);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 250px;
-    }
-
-    .banner-preview-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: opacity 0.3s ease;
-    }
-
-    .loading-placeholder,
-    .error-placeholder {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        color: var(--text-muted);
-        padding: 2rem;
-    }
-
-    .loading-spinner {
-        width: 40px;
-        height: 40px;
-        border: 3px solid var(--border-color);
-        border-top: 3px solid var(--primary-500);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin-bottom: 1rem;
-    }
-
-    .loading-text,
-    .error-text {
-        font-size: 0.875rem;
-        color: var(--text-muted);
-        margin: 0;
-    }
-
+    /* Animações */
     @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
 
-    .flex-wrap {
-        flex-wrap: wrap;
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    /* Utilitários */
+    .mr-3 {
+        margin-right: 0.75rem;
+    }
+
+    .mb-3 {
+        margin-bottom: 0.75rem;
+    }
+
+    .mb-6 {
+        margin-bottom: 1.5rem;
+    }
+
+    .mt-3 {
+        margin-top: 0.75rem;
+    }
+
+    .w-full {
+        width: 100%;
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
     }
 
     .py-12 {
@@ -466,6 +665,11 @@ if (isset($_GET['banner'])) {
         line-height: 1.75rem;
     }
 
+    .text-4xl {
+        font-size: 2.25rem;
+        line-height: 2.5rem;
+    }
+
     .font-semibold {
         font-weight: 600;
     }
@@ -478,27 +682,6 @@ if (isset($_GET['banner'])) {
         margin-bottom: 1rem;
     }
 
-    .mb-6 {
-        margin-bottom: 1.5rem;
-    }
-
-    .mt-2 {
-        margin-top: 0.5rem;
-    }
-
-    .mt-4 {
-        margin-top: 1rem;
-    }
-
-    .w-full {
-        width: 100%;
-    }
-
-    .btn-sm {
-        padding: 0.5rem 1rem;
-        font-size: 0.75rem;
-    }
-
     /* Dark theme adjustments */
     [data-theme="dark"] .text-gray-300 {
         color: var(--text-muted);
@@ -506,6 +689,36 @@ if (isset($_GET['banner'])) {
 
     [data-theme="dark"] .text-danger-500 {
         color: #ef4444;
+    }
+
+    /* Responsividade adicional */
+    @media (max-width: 768px) {
+        .banners-grid {
+            gap: 1.5rem;
+        }
+        
+        .banner-card-header {
+            padding: 1rem;
+        }
+        
+        .banner-actions {
+            padding: 1rem;
+        }
+        
+        .banner-preview-container {
+            height: 250px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .banner-preview-container {
+            height: 200px;
+        }
+        
+        .loading-placeholder,
+        .error-placeholder {
+            padding: 1rem;
+        }
     }
 </style>
 
@@ -549,25 +762,33 @@ function updateBannerStatus(index, status) {
     const statusItem = document.getElementById(`banner-status-${index}`);
     const statusIcon = statusItem.querySelector('.status-icon i');
     const statusSpinner = statusItem.querySelector('.status-spinner');
+    const cardStatus = document.getElementById(`status-${index}`);
     
     // Remove todas as classes de status
     statusItem.classList.remove('loading', 'success', 'error');
+    cardStatus.className = 'banner-status';
     
     switch (status) {
         case 'loading':
             statusItem.classList.add('loading');
+            cardStatus.classList.add('status-loading');
             statusIcon.className = 'fas fa-clock text-primary-500';
-            statusSpinner.style.display = 'block';
+            if (statusSpinner) statusSpinner.style.display = 'block';
+            cardStatus.innerHTML = '<div class="status-loading"><i class="fas fa-spinner fa-spin text-primary-500"></i></div>';
             break;
         case 'success':
             statusItem.classList.add('success');
+            cardStatus.classList.add('status-success');
             statusIcon.className = 'fas fa-check-circle text-success-500';
-            statusSpinner.style.display = 'none';
+            if (statusSpinner) statusSpinner.style.display = 'none';
+            cardStatus.innerHTML = '<div class="status-success"><i class="fas fa-check-circle text-success-500"></i></div>';
             break;
         case 'error':
             statusItem.classList.add('error');
+            cardStatus.classList.add('status-error');
             statusIcon.className = 'fas fa-times-circle text-danger-500';
-            statusSpinner.style.display = 'none';
+            if (statusSpinner) statusSpinner.style.display = 'none';
+            cardStatus.innerHTML = '<div class="status-error"><i class="fas fa-times-circle text-danger-500"></i></div>';
             break;
     }
 }
@@ -579,7 +800,7 @@ function loadBanner(index, script) {
     
     if (!img || !loading || !error) return;
     
-    // Atualizar status no modal
+    // Atualizar status no modal e card
     updateBannerStatus(index, 'loading');
     
     // Reset estado
@@ -594,7 +815,7 @@ function loadBanner(index, script) {
     
     console.log(`Carregando banner ${index}: ${url}`);
     
-    // Timeout aumentado para 60 segundos (2x mais que antes)
+    // Timeout aumentado para 60 segundos
     const timeout = setTimeout(() => {
         console.log(`Timeout para banner ${index} após 60 segundos`);
         showError(index, 'Timeout ao carregar banner');
@@ -704,7 +925,7 @@ document.addEventListener('DOMContentLoaded', function() {
         banners.forEach((banner, i) => {
             setTimeout(() => {
                 loadBanner(banner.index, banner.script);
-            }, i * 2000); // 2 segundos entre cada banner (antes era 1)
+            }, i * 2000); // 2 segundos entre cada banner
         });
     <?php endif; ?>
 });
@@ -719,7 +940,10 @@ window.retryBanner = retryBanner;
 ?>
 
 <div class="page-header">
-    <h1 class="page-title">Escolha o Modelo de Banner</h1>
+    <h1 class="page-title">
+        <i class="fas fa-futbol text-primary-500 mr-3"></i>
+        Escolha o Modelo de Banner
+    </h1>
     <p class="page-subtitle">Selecione o estilo que melhor se adequa às suas necessidades</p>
 </div>
 
