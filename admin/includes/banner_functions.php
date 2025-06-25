@@ -39,34 +39,38 @@ function carregarImagemDeUrl(string $url, int $maxSize) {
         CURLOPT_RETURNTRANSFER => 1,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_CONNECTTIMEOUT => 10,  // Aumentado para 10 segundos
-        CURLOPT_TIMEOUT => 30,         // Aumentado para 30 segundos
-        CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; FutBanner/1.0)',
+        CURLOPT_CONNECTTIMEOUT => 15,  // Aumentado para 15 segundos
+        CURLOPT_TIMEOUT => 60,         // Aumentado para 60 segundos
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_MAXREDIRS => 5,
         CURLOPT_ENCODING => '',        // Aceitar compressão
         CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4, // Forçar IPv4
+        CURLOPT_FRESH_CONNECT => true, // Forçar nova conexão
+        CURLOPT_FORBID_REUSE => true,  // Não reutilizar conexão
     ]);
     
     $imageContent = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $error = curl_error($ch);
+    $info = curl_getinfo($ch);
     curl_close($ch);
 
     if ($imageContent === false || $httpCode >= 400 || !empty($error)) {
-        error_log("Erro ao carregar imagem: $url - HTTP: $httpCode - Error: $error");
+        error_log("ERRO CARREGAMENTO IMAGEM: URL=$url | HTTP=$httpCode | Error=$error | Time={$info['total_time']}s");
         return $imageCache[$cacheKey] = false;
     }
     
     $img = @imagecreatefromstring($imageContent);
     if (!$img) {
-        error_log("Erro ao criar imagem de string: $url");
+        error_log("ERRO CRIAR IMAGEM: URL=$url | Size=" . strlen($imageContent) . " bytes");
         return $imageCache[$cacheKey] = false;
     }
 
     $w = imagesx($img); $h = imagesy($img);
     if ($w == 0 || $h == 0) {
         imagedestroy($img);
+        error_log("ERRO DIMENSÕES IMAGEM: URL=$url | W=$w | H=$h");
         return $imageCache[$cacheKey] = false;
     }
     
@@ -78,6 +82,7 @@ function carregarImagemDeUrl(string $url, int $maxSize) {
     imagecopyresampled($imgResized, $img, 0, 0, 0, 0, $newW, $newH, $w, $h);
     imagedestroy($img);
     
+    error_log("SUCESSO CARREGAMENTO: URL=$url | Size={$newW}x{$newH} | Time={$info['total_time']}s");
     return $imageCache[$cacheKey] = $imgResized;
 }
 
@@ -88,12 +93,14 @@ function carregarLogoCanalComAlturaFixa(string $url, int $alturaFixa = 50) {
         CURLOPT_RETURNTRANSFER => 1,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_CONNECTTIMEOUT => 10,
-        CURLOPT_TIMEOUT => 30,
-        CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; FutBanner/1.0)',
+        CURLOPT_CONNECTTIMEOUT => 15,
+        CURLOPT_TIMEOUT => 60,
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         CURLOPT_MAXREDIRS => 5,
         CURLOPT_ENCODING => '',
         CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+        CURLOPT_FRESH_CONNECT => true,
+        CURLOPT_FORBID_REUSE => true,
     ]);
     
     $imageContent = curl_exec($ch);
@@ -184,8 +191,8 @@ function getChaveRemota() {
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Content-Length: ' . strlen($postData)]);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $postData); 
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
     
     $response = curl_exec($ch);
     curl_close($ch);
@@ -247,31 +254,57 @@ function desenhar_retangulo_arredondado($image, $x, $y, $width, $height, $radius
 }
 
 function obterJogosDeHoje() {
+    $startTime = microtime(true);
+    error_log("INÍCIO BUSCA JOGOS: " . date('Y-m-d H:i:s'));
+    
     $chave_secreta = getChaveRemota();
+    if (!$chave_secreta) {
+        error_log("ERRO: Não foi possível obter chave remota");
+        return [];
+    }
+    
     $parametro_criptografado = 'SVI0Sjh1MTJuRkw1bmFyeFdPb3cwOXA2TFo3RWlSQUxLbkczaGE4MXBiMWhENEpOWkhkSFZoeURaWFVDM1lTZzo6RNBu5BBhzmFRkTPPSikeJg==';
-    $json_url = $chave_secreta ? descriptografarURL($parametro_criptografado, $chave_secreta) : null;
+    $json_url = descriptografarURL($parametro_criptografado, $chave_secreta);
+    
+    if (!$json_url) {
+        error_log("ERRO: Não foi possível descriptografar URL");
+        return [];
+    }
 
     $jogos = [];
-    if ($json_url) {
-        $ch = curl_init($json_url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-        $json_content = curl_exec($ch);
-        curl_close($ch);
-        
-        if ($json_content) {
-            $todos_jogos = json_decode($json_content, true);
-            if (is_array($todos_jogos)) {
-                foreach ($todos_jogos as $jogo) {
-                    if (isset($jogo['data_jogo']) && $jogo['data_jogo'] === 'hoje') {
-                        $jogos[] = $jogo;
-                    }
-                }
-            }
+    $ch = curl_init($json_url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+    
+    $json_content = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch);
+    curl_close($ch);
+    
+    if ($json_content === false || $httpCode >= 400 || !empty($error)) {
+        error_log("ERRO BUSCA JOGOS: HTTP=$httpCode | Error=$error");
+        return [];
+    }
+    
+    $todos_jogos = json_decode($json_content, true);
+    if (!is_array($todos_jogos)) {
+        error_log("ERRO: JSON inválido ou não é array");
+        return [];
+    }
+    
+    foreach ($todos_jogos as $jogo) {
+        if (isset($jogo['data_jogo']) && $jogo['data_jogo'] === 'hoje') {
+            $jogos[] = $jogo;
         }
     }
+    
+    $endTime = microtime(true);
+    $duration = round($endTime - $startTime, 2);
+    error_log("FIM BUSCA JOGOS: " . count($jogos) . " jogos encontrados em {$duration}s");
+    
     return $jogos;
 }
 ?>
