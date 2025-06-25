@@ -22,7 +22,9 @@ function getChaveRemota() {
         CURLOPT_POST => true,
         CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Content-Length: ' . strlen($postData)],
         CURLOPT_POSTFIELDS => $postData,
-        CURLOPT_SSL_VERIFYPEER => false
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_TIMEOUT => 5,
+        CURLOPT_CONNECTTIMEOUT => 3
     ]);
     $response = curl_exec($ch);
     curl_close($ch);
@@ -34,7 +36,7 @@ function descriptografarURL($urlCodificada, $chave) {
     return openssl_decrypt($url_criptografada, 'aes-256-cbc', $chave, 0, $iv);
 }
 
-// Obter dados dos jogos
+// Obter dados dos jogos com timeout reduzido
 $chave_secreta = getChaveRemota();
 $parametro_criptografado = 'SVI0Sjh1MTJuRkw1bmFyeFdPb3cwOXA2TFo3RWlSQUxLbkczaGE4MXBiMWhENEpOWkhkSFZoeURaWFVDM1lTZzo6RNBu5BBhzmFRkTPPSikeJg==';
 $json_url = $chave_secreta ? descriptografarURL($parametro_criptografado, $chave_secreta) : null;
@@ -44,6 +46,8 @@ if ($json_url) {
     $ch = curl_init($json_url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
     $json_content = curl_exec($ch);
     curl_close($ch);
 
@@ -89,10 +93,10 @@ if (isset($_GET['banner'])) {
         Voltar para Seleção
     </a>
     <?php if (!empty($jogos)): ?>
-        <a href="<?php echo $geradorScript; ?>?download_all=1" class="btn btn-success">
+        <button onclick="downloadAllBanners('<?php echo $geradorScript; ?>')" class="btn btn-success" id="downloadAllBtn">
             <i class="fas fa-download"></i>
             Baixar Todos (ZIP)
-        </a>
+        </button>
     <?php endif; ?>
 </div>
 
@@ -115,16 +119,21 @@ if (isset($_GET['banner'])) {
                     <p class="card-subtitle"><?php echo count($grupo); ?> jogos neste banner</p>
                 </div>
                 <div class="card-body">
-                    <div class="banner-preview-container">
-                        <img src="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>" 
+                    <div class="banner-preview-container" id="preview-<?php echo $index; ?>">
+                        <div class="banner-loading-placeholder">
+                            <div class="loading-spinner"></div>
+                            <span>Carregando prévia...</span>
+                        </div>
+                        <img data-src="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>" 
                              alt="Banner Parte <?php echo $index + 1; ?>" 
-                             class="banner-preview-image">
+                             class="banner-preview-image lazy-load"
+                             style="opacity: 0;">
                     </div>
-                    <a href="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>&download=1" 
-                       class="btn btn-primary w-full mt-4">
+                    <button onclick="downloadSingleBanner('<?php echo $geradorScript; ?>', <?php echo $index; ?>)" 
+                            class="btn btn-primary w-full mt-4">
                         <i class="fas fa-download"></i>
                         Baixar Banner
-                    </a>
+                    </button>
                 </div>
             </div>
         <?php endforeach; ?>
@@ -160,16 +169,15 @@ if (isset($_GET['banner'])) {
                     <p class="card-subtitle">Estilo profissional e moderno</p>
                 </div>
                 <div class="card-body">
-                    <div class="banner-preview-container">
+                    <div class="banner-preview-container" id="model-preview-<?php echo $i; ?>">
                         <div class="banner-loading-placeholder">
                             <div class="loading-spinner"></div>
                             <span>Carregando prévia...</span>
                         </div>
-                        <img src="gerar_fut<?php echo $i > 1 ? '_' . $i : ''; ?>.php?grupo=0" 
+                        <img data-src="gerar_fut<?php echo $i > 1 ? '_' . $i : ''; ?>.php?grupo=0" 
                              alt="Prévia do Banner <?php echo $i; ?>" 
-                             class="banner-preview-image"
-                             onload="this.previousElementSibling.style.display='none'; this.style.opacity='1';"
-                             onerror="this.previousElementSibling.innerHTML='<i class=\'fas fa-exclamation-triangle\'></i><span>Erro ao carregar</span>';">
+                             class="banner-preview-image lazy-load"
+                             style="opacity: 0;">
                     </div>
                     <a href="?banner=<?php echo $i; ?>" class="btn btn-primary w-full mt-4 group-hover:bg-primary-600">
                         <i class="fas fa-check"></i>
@@ -196,7 +204,6 @@ if (isset($_GET['banner'])) {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        opacity: 0;
         transition: opacity 0.3s ease;
     }
 
@@ -214,6 +221,7 @@ if (isset($_GET['banner'])) {
         color: var(--text-muted);
         font-size: 0.875rem;
         gap: 1rem;
+        z-index: 2;
     }
 
     .loading-spinner {
@@ -281,47 +289,211 @@ if (isset($_GET['banner'])) {
     [data-theme="dark"] .text-warning-500 {
         color: #f59e0b;
     }
+
+    /* Loading overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .loading-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .loading-content {
+        background: var(--bg-primary);
+        padding: 2rem;
+        border-radius: var(--border-radius);
+        text-align: center;
+        box-shadow: var(--shadow-xl);
+        max-width: 300px;
+    }
+
+    .loading-content .loading-spinner {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 1rem;
+    }
 </style>
 
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Permitir navegação mesmo durante carregamento
-        const images = document.querySelectorAll('.banner-preview-image');
-        let loadedCount = 0;
-        const totalImages = images.length;
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <h3 class="font-semibold mb-2">Processando...</h3>
+        <p class="text-muted text-sm">Aguarde enquanto geramos seus banners</p>
+        <button onclick="cancelOperation()" class="btn btn-secondary mt-4">
+            <i class="fas fa-times"></i>
+            Cancelar
+        </button>
+    </div>
+</div>
 
-        // Não bloquear navegação - remover qualquer overlay ou modal de loading
-        
-        images.forEach((image, index) => {
-            // Timeout para evitar travamento em caso de erro
-            const timeout = setTimeout(() => {
-                if (image.style.opacity === '0' || image.style.opacity === '') {
-                    const placeholder = image.previousElementSibling;
-                    if (placeholder) {
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    let currentRequests = [];
+    let isNavigating = false;
+
+    // Lazy loading das imagens
+    const lazyImages = document.querySelectorAll('.lazy-load');
+    const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                const placeholder = img.previousElementSibling;
+                
+                // Timeout para evitar travamento
+                const timeout = setTimeout(() => {
+                    if (img.style.opacity === '0') {
                         placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Timeout ao carregar</span>';
                     }
-                }
-            }, 10000); // 10 segundos timeout
+                }, 8000);
 
-            image.onload = () => {
-                clearTimeout(timeout);
-                loadedCount++;
-                image.style.opacity = '1';
-                const placeholder = image.previousElementSibling;
-                if (placeholder) {
-                    placeholder.style.display = 'none';
-                }
-            };
+                img.onload = () => {
+                    clearTimeout(timeout);
+                    img.style.opacity = '1';
+                    if (placeholder) {
+                        placeholder.style.display = 'none';
+                    }
+                };
 
-            image.onerror = () => {
-                clearTimeout(timeout);
-                const placeholder = image.previousElementSibling;
-                if (placeholder) {
-                    placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Erro ao carregar</span>';
-                }
-            };
+                img.onerror = () => {
+                    clearTimeout(timeout);
+                    if (placeholder) {
+                        placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Erro ao carregar</span>';
+                    }
+                };
+
+                img.src = img.dataset.src;
+                observer.unobserve(img);
+            }
         });
     });
+
+    lazyImages.forEach(img => imageObserver.observe(img));
+
+    // Permitir navegação mesmo durante carregamento
+    window.addEventListener('beforeunload', (e) => {
+        if (currentRequests.length > 0 && !isNavigating) {
+            currentRequests.forEach(request => {
+                if (request.abort) request.abort();
+            });
+        }
+    });
+
+    // Interceptar cliques em links para cancelar operações
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('a[href]');
+        if (link && !link.href.includes('#') && !link.target) {
+            isNavigating = true;
+            cancelAllRequests();
+        }
+    });
+});
+
+function downloadSingleBanner(script, index) {
+    showLoading();
+    
+    const downloadUrl = `${script}?grupo=${index}&download=1`;
+    
+    // Criar link temporário para download
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `banner_parte_${index + 1}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Esconder loading após um tempo
+    setTimeout(() => {
+        hideLoading();
+    }, 2000);
+}
+
+function downloadAllBanners(script) {
+    showLoading();
+    
+    const downloadUrl = `${script}?download_all=1`;
+    
+    // Criar link temporário para download
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `banners_completos.zip`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Esconder loading após um tempo
+    setTimeout(() => {
+        hideLoading();
+    }, 3000);
+}
+
+function showLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.classList.add('active');
+    }
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+    }
+}
+
+function cancelOperation() {
+    cancelAllRequests();
+    hideLoading();
+}
+
+function cancelAllRequests() {
+    // Cancelar todas as requisições ativas
+    if (window.currentRequests) {
+        window.currentRequests.forEach(request => {
+            if (request.abort) request.abort();
+        });
+        window.currentRequests = [];
+    }
+}
+
+// Otimização: Preload apenas das imagens visíveis
+function preloadVisibleImages() {
+    const visibleImages = document.querySelectorAll('.banner-preview-image[data-src]');
+    const viewportHeight = window.innerHeight;
+    
+    visibleImages.forEach(img => {
+        const rect = img.getBoundingClientRect();
+        if (rect.top < viewportHeight + 200) { // 200px de margem
+            if (img.dataset.src && !img.src) {
+                img.src = img.dataset.src;
+            }
+        }
+    });
+}
+
+// Executar preload após um pequeno delay
+setTimeout(preloadVisibleImages, 500);
+
+// Preload ao fazer scroll
+let scrollTimeout;
+window.addEventListener('scroll', () => {
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(preloadVisibleImages, 100);
+});
 </script>
 
 <?php
