@@ -32,28 +32,6 @@ if (isset($_GET['banner'])) {
     }
 ?>
 
-<!-- Modal de Progresso -->
-<div id="loadingModal" class="loading-modal">
-    <div class="loading-modal-content">
-        <div class="loading-header">
-            <h3>Gerando Banners</h3>
-            <p>Por favor, aguarde enquanto os banners são criados...</p>
-        </div>
-        <div class="progress-container">
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
-            </div>
-            <div class="progress-text">
-                <span id="progressText">0%</span>
-                <span id="progressStatus">Iniciando...</span>
-            </div>
-        </div>
-        <div class="loading-animation">
-            <div class="spinner"></div>
-        </div>
-    </div>
-</div>
-
 <div class="page-header">
     <h1 class="page-title">Banners de Jogos de Hoje</h1>
     <p class="page-subtitle">Modelo <?php echo $tipo_banner; ?> - <?php echo count($jogos); ?> jogos disponíveis</p>
@@ -125,28 +103,6 @@ if (isset($_GET['banner'])) {
     // Tela de seleção de modelo
 ?>
 
-<!-- Modal de Progresso para Modelos -->
-<div id="loadingModal" class="loading-modal">
-    <div class="loading-modal-content">
-        <div class="loading-header">
-            <h3>Carregando Modelos</h3>
-            <p>Por favor, aguarde enquanto os modelos são carregados...</p>
-        </div>
-        <div class="progress-container">
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
-            </div>
-            <div class="progress-text">
-                <span id="progressText">0%</span>
-                <span id="progressStatus">Iniciando...</span>
-            </div>
-        </div>
-        <div class="loading-animation">
-            <div class="spinner"></div>
-        </div>
-    </div>
-</div>
-
 <div class="page-header">
     <h1 class="page-title">Escolha o Modelo de Banner</h1>
     <p class="page-subtitle">Selecione o estilo que melhor se adequa às suas necessidades</p>
@@ -199,6 +155,31 @@ if (isset($_GET['banner'])) {
     </div>
 <?php endif; ?>
 
+<!-- Modal de Progresso - POSICIONADO CORRETAMENTE -->
+<div id="loadingModal" class="loading-modal-overlay">
+    <div class="loading-modal-backdrop"></div>
+    <div class="loading-modal-container">
+        <div class="loading-modal-content">
+            <div class="loading-header">
+                <h3 id="modalTitle">Carregando Banners</h3>
+                <p id="modalSubtitle">Por favor, aguarde enquanto os banners são criados...</p>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="progressText">0%</span>
+                    <span id="progressStatus">Iniciando...</span>
+                </div>
+            </div>
+            <div class="loading-animation">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     /* GRID ESPECÍFICO PARA BANNERS - SEMPRE 2 COLUNAS */
     .banners-grid-container {
@@ -246,37 +227,61 @@ if (isset($_GET['banner'])) {
         }
     }
 
-    /* Modal de Loading */
-    .loading-modal {
+    /* MODAL DE LOADING - CORRIGIDO PARA SOBREPOR CORRETAMENTE */
+    .loading-modal-overlay {
         position: fixed;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
+        right: 0;
+        bottom: 0;
+        z-index: 99999;
         opacity: 0;
         visibility: hidden;
         transition: all 0.3s ease;
+        pointer-events: none;
     }
 
-    .loading-modal.show {
+    .loading-modal-overlay.show {
         opacity: 1;
         visibility: visible;
+        pointer-events: all;
+    }
+
+    .loading-modal-backdrop {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(4px);
+    }
+
+    .loading-modal-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
     }
 
     .loading-modal-content {
         background: var(--bg-primary);
         border-radius: 16px;
-        padding: 2rem;
-        max-width: 400px;
-        width: 90%;
+        padding: 2.5rem;
+        max-width: 450px;
+        width: 100%;
         text-align: center;
-        box-shadow: var(--shadow-xl);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         border: 1px solid var(--border-color);
+        transform: scale(0.9);
+        transition: transform 0.3s ease;
+    }
+
+    .loading-modal-overlay.show .loading-modal-content {
+        transform: scale(1);
     }
 
     .loading-header h3 {
@@ -289,6 +294,7 @@ if (isset($_GET['banner'])) {
     .loading-header p {
         color: var(--text-secondary);
         margin-bottom: 2rem;
+        font-size: 0.95rem;
     }
 
     .progress-container {
@@ -297,19 +303,38 @@ if (isset($_GET['banner'])) {
 
     .progress-bar {
         width: 100%;
-        height: 8px;
+        height: 10px;
         background: var(--bg-tertiary);
-        border-radius: 4px;
+        border-radius: 5px;
         overflow: hidden;
         margin-bottom: 1rem;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
     .progress-fill {
         height: 100%;
         background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
         width: 0%;
-        transition: width 0.3s ease;
-        border-radius: 4px;
+        transition: width 0.4s ease;
+        border-radius: 5px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .progress-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
     }
 
     .progress-text {
@@ -320,23 +345,25 @@ if (isset($_GET['banner'])) {
     }
 
     #progressText {
-        font-weight: 600;
+        font-weight: 700;
         color: var(--primary-500);
+        font-size: 1rem;
     }
 
     #progressStatus {
         color: var(--text-secondary);
+        font-weight: 500;
     }
 
     .loading-animation {
-        margin-top: 1rem;
+        margin-top: 1.5rem;
     }
 
     .spinner {
-        width: 40px;
-        height: 40px;
-        border: 3px solid var(--border-color);
-        border-top: 3px solid var(--primary-500);
+        width: 48px;
+        height: 48px;
+        border: 4px solid var(--border-color);
+        border-top: 4px solid var(--primary-500);
         border-radius: 50%;
         animation: spin 1s linear infinite;
         margin: 0 auto;
@@ -433,6 +460,10 @@ if (isset($_GET['banner'])) {
         color: #f59e0b;
     }
 
+    [data-theme="dark"] .loading-modal-backdrop {
+        background: rgba(0, 0, 0, 0.9);
+    }
+
     /* Hover effects */
     .group:hover {
         transform: translateY(-2px);
@@ -456,8 +487,12 @@ if (isset($_GET['banner'])) {
 
     /* Ajustes específicos para mobile */
     @media (max-width: 480px) {
+        .loading-modal-container {
+            padding: 1rem;
+        }
+        
         .loading-modal-content {
-            padding: 1.5rem;
+            padding: 2rem;
             margin: 1rem;
         }
         
@@ -480,6 +515,8 @@ let modal = null;
 let progressFill = null;
 let progressText = null;
 let progressStatus = null;
+let modalTitle = null;
+let modalSubtitle = null;
 let isModalShown = false;
 let loadingTimeout = null;
 
@@ -491,6 +528,8 @@ document.addEventListener('DOMContentLoaded', function() {
     progressFill = document.getElementById('progressFill');
     progressText = document.getElementById('progressText');
     progressStatus = document.getElementById('progressStatus');
+    modalTitle = document.getElementById('modalTitle');
+    modalSubtitle = document.getElementById('modalSubtitle');
     
     if (!modal) {
         console.error('❌ Modal não encontrado!');
@@ -510,6 +549,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Página de visualização de banners
         totalImages = bannerImages.length;
         console.log('📊 Iniciando carregamento de', totalImages, 'banners');
+        
+        // Configurar modal para banners
+        if (modalTitle) modalTitle.textContent = 'Gerando Banners';
+        if (modalSubtitle) modalSubtitle.textContent = 'Por favor, aguarde enquanto os banners são criados...';
+        
         showModal();
         updateProgress(0, 'Carregando banners...');
         
@@ -538,6 +582,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Página de seleção de modelos
         totalImages = modelImages.length;
         console.log('📊 Iniciando carregamento de', totalImages, 'modelos');
+        
+        // Configurar modal para modelos
+        if (modalTitle) modalTitle.textContent = 'Carregando Modelos';
+        if (modalSubtitle) modalSubtitle.textContent = 'Por favor, aguarde enquanto os modelos são carregados...';
+        
         showModal();
         updateProgress(0, 'Carregando modelos...');
         
@@ -580,6 +629,8 @@ function showModal() {
         console.log('📱 Mostrando modal...');
         modal.classList.add('show');
         isModalShown = true;
+        // Prevenir scroll do body
+        document.body.style.overflow = 'hidden';
     }
 }
 
@@ -593,6 +644,8 @@ function hideModal() {
         setTimeout(() => {
             modal.classList.remove('show');
             isModalShown = false;
+            // Restaurar scroll do body
+            document.body.style.overflow = '';
         }, 500);
     }
 }
@@ -661,10 +714,10 @@ function handleImageError(img, index, type) {
     checkAllLoaded();
 }
 
-// Permitir fechar modal clicando fora
+// Permitir fechar modal clicando no backdrop
 if (modal) {
     modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
+        if (e.target === modal || e.target.classList.contains('loading-modal-backdrop')) {
             hideModal();
         }
     });
@@ -673,6 +726,13 @@ if (modal) {
 // Debug: Log quando a página termina de carregar
 window.addEventListener('load', function() {
     console.log('🎯 Página totalmente carregada');
+});
+
+// Limpar ao sair da página
+window.addEventListener('beforeunload', function() {
+    if (isModalShown) {
+        document.body.style.overflow = '';
+    }
 });
 </script>
 
