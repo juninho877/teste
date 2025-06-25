@@ -32,7 +32,7 @@ if (isset($_GET['banner'])) {
     }
 ?>
 
-<!-- Modal de Progresso -->
+<!-- Modal de Progresso para Banners -->
 <div id="loadingModal" class="loading-modal">
     <div class="loading-modal-content">
         <div class="loading-header">
@@ -83,10 +83,10 @@ if (isset($_GET['banner'])) {
         </div>
     </div>
 <?php else: ?>
-    <!-- Grid com 2 colunas para banners -->
-    <div class="banners-grid">
+    <!-- Grid específico para banners - SEMPRE 2 colunas -->
+    <div class="banners-display-grid">
         <?php foreach ($gruposDeJogos as $index => $grupo): ?>
-            <div class="banner-card-wrapper">
+            <div class="banner-item">
                 <div class="card banner-card">
                     <div class="card-header">
                         <h3 class="card-title">Banner Parte <?php echo $index + 1; ?></h3>
@@ -98,8 +98,8 @@ if (isset($_GET['banner'])) {
                                  alt="Banner Parte <?php echo $index + 1; ?>" 
                                  class="banner-preview-image"
                                  data-index="<?php echo $index; ?>"
-                                 onload="handleImageLoad(this)"
-                                 onerror="handleImageError(this)">
+                                 onload="handleBannerLoad(this)"
+                                 onerror="handleBannerError(this)">
                             <div class="banner-loading" id="loading-<?php echo $index; ?>">
                                 <div class="loading-spinner"></div>
                                 <span>Carregando...</span>
@@ -164,10 +164,10 @@ if (isset($_GET['banner'])) {
         </div>
     </div>
 <?php else: ?>
-    <!-- Grid com 3 colunas para seleção de modelos -->
-    <div class="models-grid">
+    <!-- Grid específico para modelos - 3 colunas -->
+    <div class="models-display-grid">
         <?php for ($i = 1; $i <= 3; $i++): ?>
-            <div class="model-card-wrapper">
+            <div class="model-item">
                 <div class="card model-card group hover:shadow-xl transition-all duration-300">
                     <div class="card-header">
                         <h3 class="card-title">Banner Modelo <?php echo $i; ?></h3>
@@ -202,36 +202,36 @@ if (isset($_GET['banner'])) {
 <?php endif; ?>
 
 <style>
-    /* Grid para banners - 2 colunas fixas */
-    .banners-grid {
+    /* Grid específico para banners - SEMPRE 2 colunas */
+    .banners-display-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 2rem;
         margin-bottom: 2rem;
     }
 
-    /* Grid para modelos - 3 colunas fixas */
-    .models-grid {
+    /* Grid específico para modelos - 3 colunas */
+    .models-display-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 1.5rem;
         margin-bottom: 2rem;
     }
 
-    /* Wrappers dos cards */
-    .banner-card-wrapper,
-    .model-card-wrapper {
+    /* Items dos grids */
+    .banner-item,
+    .model-item {
         width: 100%;
-        min-width: 0; /* Permite que o conteúdo seja comprimido */
+        min-width: 0;
     }
 
-    /* Responsividade para tablets */
+    /* Responsividade ESPECÍFICA para banners */
     @media (max-width: 1024px) {
-        .banners-grid {
+        .banners-display-grid {
             grid-template-columns: 1fr;
             gap: 1.5rem;
         }
-        .models-grid {
+        .models-display-grid {
             grid-template-columns: repeat(2, 1fr);
             gap: 1.5rem;
         }
@@ -239,13 +239,12 @@ if (isset($_GET['banner'])) {
 
     /* Responsividade para mobile */
     @media (max-width: 768px) {
-        .banners-grid,
-        .models-grid {
+        .banners-display-grid,
+        .models-display-grid {
             grid-template-columns: 1fr;
             gap: 1rem;
         }
         
-        /* Ajustes específicos para mobile */
         .banner-preview-container {
             height: auto;
             min-height: 200px;
@@ -496,26 +495,39 @@ let modal = null;
 let progressFill = null;
 let progressText = null;
 let progressStatus = null;
+let isModalShown = false;
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM carregado, inicializando modal...');
+    
     // Inicializar elementos do modal
     modal = document.getElementById('loadingModal');
     progressFill = document.getElementById('progressFill');
     progressText = document.getElementById('progressText');
     progressStatus = document.getElementById('progressStatus');
     
+    if (!modal) {
+        console.error('Modal não encontrado!');
+        return;
+    }
+    
     // Verificar qual página estamos
     const bannerImages = document.querySelectorAll('.banner-preview-image:not(.model-image)');
     const modelImages = document.querySelectorAll('.model-image');
     
+    console.log('Banners encontrados:', bannerImages.length);
+    console.log('Modelos encontrados:', modelImages.length);
+    
     if (bannerImages.length > 0) {
         // Página de visualização de banners
         totalImages = bannerImages.length;
+        console.log('Iniciando carregamento de', totalImages, 'banners');
         showModal();
         updateProgress(0, 'Carregando banners...');
     } else if (modelImages.length > 0) {
         // Página de seleção de modelos
         totalImages = modelImages.length;
+        console.log('Iniciando carregamento de', totalImages, 'modelos');
         showModal();
         updateProgress(0, 'Carregando modelos...');
     }
@@ -523,6 +535,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Timeout geral para fechar modal se demorar muito
     setTimeout(() => {
         if (modal && modal.classList.contains('show')) {
+            console.log('Timeout atingido, fechando modal');
             hideModal();
         }
     }, 30000); // 30 segundos
@@ -530,22 +543,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Função para mostrar o modal
 function showModal() {
-    if (modal) {
+    if (modal && !isModalShown) {
+        console.log('Mostrando modal...');
         modal.classList.add('show');
+        isModalShown = true;
     }
 }
 
 // Função para esconder o modal
 function hideModal() {
-    if (modal) {
+    if (modal && isModalShown) {
+        console.log('Escondendo modal...');
         setTimeout(() => {
             modal.classList.remove('show');
+            isModalShown = false;
         }, 500);
     }
 }
 
 // Função para atualizar o progresso
 function updateProgress(percentage, status) {
+    console.log('Progresso:', percentage + '%', status);
     if (progressFill) progressFill.style.width = percentage + '%';
     if (progressText) progressText.textContent = Math.round(percentage) + '%';
     if (progressStatus) progressStatus.textContent = status;
@@ -559,6 +577,7 @@ function calculateProgress() {
 
 // Função para verificar se todos carregaram
 function checkAllLoaded() {
+    console.log('Verificando carregamento:', loadedImages, '/', totalImages);
     if (loadedImages >= totalImages) {
         updateProgress(100, 'Concluído!');
         setTimeout(() => {
@@ -568,10 +587,12 @@ function checkAllLoaded() {
 }
 
 // Handlers para imagens de banner
-function handleImageLoad(img) {
+function handleBannerLoad(img) {
     loadedImages++;
     const index = img.getAttribute('data-index');
     const loadingElement = document.getElementById(`loading-${index}`);
+    
+    console.log('Banner carregado:', index, '- Total:', loadedImages, '/', totalImages);
     
     // Esconder loading e mostrar imagem
     if (loadingElement) loadingElement.style.display = 'none';
@@ -584,11 +605,13 @@ function handleImageLoad(img) {
     checkAllLoaded();
 }
 
-function handleImageError(img) {
+function handleBannerError(img) {
     loadedImages++;
     const index = img.getAttribute('data-index');
     const loadingElement = document.getElementById(`loading-${index}`);
     const errorElement = document.getElementById(`error-${index}`);
+    
+    console.log('Erro no banner:', index);
     
     // Mostrar erro
     if (loadingElement) loadingElement.style.display = 'none';
@@ -606,6 +629,8 @@ function handleModelLoad(img) {
     const modelNumber = img.getAttribute('data-model');
     const loadingElement = document.getElementById(`model-loading-${modelNumber}`);
     
+    console.log('Modelo carregado:', modelNumber, '- Total:', loadedImages, '/', totalImages);
+    
     // Esconder loading e mostrar imagem
     if (loadingElement) loadingElement.style.display = 'none';
     img.style.display = 'block';
@@ -622,6 +647,8 @@ function handleModelError(img) {
     const modelNumber = img.getAttribute('data-model');
     const loadingElement = document.getElementById(`model-loading-${modelNumber}`);
     const errorElement = document.getElementById(`model-error-${modelNumber}`);
+    
+    console.log('Erro no modelo:', modelNumber);
     
     // Mostrar erro
     if (loadingElement) loadingElement.style.display = 'none';
