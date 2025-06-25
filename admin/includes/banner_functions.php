@@ -16,21 +16,32 @@ define('LOGO_OVERRIDES', [
 // Cache global para imagens
 $GLOBALS['imageCache'] = [];
 
+function logDebug($message) {
+    error_log("[BANNER_DEBUG] " . $message);
+}
+
 function carregarImagemDeUrl(string $url, int $maxSize) {
     global $imageCache;
     
     $cacheKey = md5($url . $maxSize);
     if (isset($imageCache[$cacheKey])) {
+        logDebug("Cache HIT para: $url");
         return $imageCache[$cacheKey];
     }
+
+    logDebug("Carregando imagem: $url (max: {$maxSize}px)");
 
     $urlParaCarregar = $url;
     $extensao = strtolower(pathinfo($url, PATHINFO_EXTENSION));
 
     if ($extensao === 'svg') {
         $cloudinaryCloudName = CLOUDINARY_CLOUD_NAME;
-        if (empty($cloudinaryCloudName)) return $imageCache[$cacheKey] = false;
+        if (empty($cloudinaryCloudName)) {
+            logDebug("ERRO: Cloudinary não configurado para SVG");
+            return $imageCache[$cacheKey] = false;
+        }
         $urlParaCarregar = "https://res.cloudinary.com/{$cloudinaryCloudName}/image/fetch/f_png/" . urlencode($url);
+        logDebug("SVG convertido via Cloudinary: $urlParaCarregar");
     }
     
     $ch = curl_init();
@@ -39,54 +50,75 @@ function carregarImagemDeUrl(string $url, int $maxSize) {
         CURLOPT_RETURNTRANSFER => 1,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_CONNECTTIMEOUT => 15,  // Aumentado para 15 segundos
-        CURLOPT_TIMEOUT => 60,         // Aumentado para 60 segundos
-        CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        CURLOPT_CONNECTTIMEOUT => 20,
+        CURLOPT_TIMEOUT => 90,
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_MAXREDIRS => 5,
-        CURLOPT_ENCODING => '',        // Aceitar compressão
-        CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4, // Forçar IPv4
-        CURLOPT_FRESH_CONNECT => true, // Forçar nova conexão
-        CURLOPT_FORBID_REUSE => true,  // Não reutilizar conexão
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_ENCODING => '',
+        CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+        CURLOPT_FRESH_CONNECT => true,
+        CURLOPT_FORBID_REUSE => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: image/webp,image/apng,image/*,*/*;q=0.8',
+            'Accept-Language: pt-BR,pt;q=0.9,en;q=0.8',
+            'Cache-Control: no-cache',
+            'Pragma: no-cache'
+        ],
     ]);
     
+    $startTime = microtime(true);
     $imageContent = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $error = curl_error($ch);
     $info = curl_getinfo($ch);
     curl_close($ch);
+    $loadTime = round(microtime(true) - $startTime, 2);
 
     if ($imageContent === false || $httpCode >= 400 || !empty($error)) {
-        error_log("ERRO CARREGAMENTO IMAGEM: URL=$url | HTTP=$httpCode | Error=$error | Time={$info['total_time']}s");
+        logDebug("ERRO CARREGAMENTO: URL=$url | HTTP=$httpCode | Error=$error | Time={$loadTime}s");
         return $imageCache[$cacheKey] = false;
     }
     
+    if (empty($imageContent)) {
+        logDebug("ERRO: Conteúdo vazio para $url");
+        return $imageCache[$cacheKey] = false;
+    }
+
+    logDebug("Download OK: " . strlen($imageContent) . " bytes em {$loadTime}s");
+    
     $img = @imagecreatefromstring($imageContent);
     if (!$img) {
-        error_log("ERRO CRIAR IMAGEM: URL=$url | Size=" . strlen($imageContent) . " bytes");
+        logDebug("ERRO: Não foi possível criar imagem de " . strlen($imageContent) . " bytes");
         return $imageCache[$cacheKey] = false;
     }
 
     $w = imagesx($img); $h = imagesy($img);
     if ($w == 0 || $h == 0) {
         imagedestroy($img);
-        error_log("ERRO DIMENSÕES IMAGEM: URL=$url | W=$w | H=$h");
+        logDebug("ERRO: Dimensões inválidas W=$w H=$h");
         return $imageCache[$cacheKey] = false;
     }
     
     $scale = min($maxSize / $w, $maxSize / $h, 1.0);
     $newW = (int)($w * $scale); $newH = (int)($h * $scale);
+    
     $imgResized = imagecreatetruecolor($newW, $newH);
     imagealphablending($imgResized, false); 
     imagesavealpha($imgResized, true);
+    $transparent = imagecolorallocatealpha($imgResized, 0, 0, 0, 127);
+    imagefill($imgResized, 0, 0, $transparent);
+    
     imagecopyresampled($imgResized, $img, 0, 0, 0, 0, $newW, $newH, $w, $h);
     imagedestroy($img);
     
-    error_log("SUCESSO CARREGAMENTO: URL=$url | Size={$newW}x{$newH} | Time={$info['total_time']}s");
+    logDebug("SUCESSO: {$newW}x{$newH} em {$loadTime}s");
     return $imageCache[$cacheKey] = $imgResized;
 }
 
 function carregarLogoCanalComAlturaFixa(string $url, int $alturaFixa = 50) {
+    logDebug("Carregando logo canal: $url");
+    
     $ch = curl_init();
     curl_setopt_array($ch, [
         CURLOPT_URL => $url,
@@ -94,7 +126,7 @@ function carregarLogoCanalComAlturaFixa(string $url, int $alturaFixa = 50) {
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_CONNECTTIMEOUT => 15,
-        CURLOPT_TIMEOUT => 60,
+        CURLOPT_TIMEOUT => 45,
         CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         CURLOPT_MAXREDIRS => 5,
         CURLOPT_ENCODING => '',
@@ -105,30 +137,47 @@ function carregarLogoCanalComAlturaFixa(string $url, int $alturaFixa = 50) {
     
     $imageContent = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch);
     curl_close($ch);
     
-    if ($imageContent === false || $httpCode >= 400) return false;
+    if ($imageContent === false || $httpCode >= 400 || !empty($error)) {
+        logDebug("ERRO logo canal: HTTP=$httpCode | Error=$error");
+        return false;
+    }
     
     $img = @imagecreatefromstring($imageContent);
-    if (!$img) return false;
+    if (!$img) {
+        logDebug("ERRO: Não foi possível criar imagem do canal");
+        return false;
+    }
     
     $origW = imagesx($img); $origH = imagesy($img);
-    if ($origH == 0) { imagedestroy($img); return false; }
+    if ($origH == 0) { 
+        imagedestroy($img); 
+        logDebug("ERRO: Altura zero na imagem do canal");
+        return false; 
+    }
     
     $ratio = $origW / $origH;
     $newW = (int)($alturaFixa * $ratio);
     $newH = $alturaFixa;
+    
     $imgResized = imagecreatetruecolor($newW, $newH);
     imagealphablending($imgResized, false); 
     imagesavealpha($imgResized, true);
     $transparent = imagecolorallocatealpha($imgResized, 0, 0, 0, 127);
     imagefill($imgResized, 0, 0, $transparent);
+    
     imagecopyresampled($imgResized, $img, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
     imagedestroy($img);
+    
+    logDebug("Logo canal OK: {$newW}x{$newH}");
     return $imgResized;
 }
 
 function criarPlaceholderComNome(string $nomeTime, int $size = 68) {
+    logDebug("Criando placeholder para: $nomeTime (size: $size)");
+    
     $img = imagecreatetruecolor($size, $size);
     imagealphablending($img, false); 
     imagesavealpha($img, true);
@@ -138,6 +187,7 @@ function criarPlaceholderComNome(string $nomeTime, int $size = 68) {
     $fontePath = __DIR__ . '/../fonts/RobotoCondensed-Bold.ttf';
     
     if (!file_exists($fontePath)) { 
+        logDebug("AVISO: Fonte não encontrada, usando fonte padrão");
         imagestring($img, 2, 2, $size/2 - 5, "No Logo", $textColor); 
         return $img; 
     }
@@ -169,18 +219,28 @@ function criarPlaceholderComNome(string $nomeTime, int $size = 68) {
         imagettftext($img, 10.5, 0, (int)$x, (int)$y, $textColor, $fontePath, $linha);
         $y += $alturaLinha + 2;
     }
+    
+    logDebug("Placeholder criado: {$size}x{$size}");
     return $img;
 }
 
 function carregarEscudo(string $nomeTime, ?string $url, int $maxSize = 60) {
     if (!empty($url)) {
         $imagem = carregarImagemDeUrl($url, $maxSize);
-        if ($imagem) return $imagem;
+        if ($imagem) {
+            logDebug("Escudo carregado via URL: $nomeTime");
+            return $imagem;
+        }
+        logDebug("Falha ao carregar escudo via URL: $nomeTime");
     }
+    
+    logDebug("Usando placeholder para: $nomeTime");
     return criarPlaceholderComNome($nomeTime, $maxSize);
 }
 
 function getChaveRemota() {
+    logDebug("Obtendo chave remota...");
+    
     $url = base64_decode('aHR0cHM6Ly9hcGlmdXQucHJvamVjdHguY2xpY2svQXV0b0FwaS9BRVMvY29uZmlna2V5LnBocA==');
     $auth = base64_decode('dmFxdW9UQlpFb0U4QmhHMg==');
     $postData = json_encode(['auth' => $auth]);
@@ -195,47 +255,84 @@ function getChaveRemota() {
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
     
     $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
-    return $response ? json_decode($response, true)['chave'] ?? null : null;
+    
+    if ($response && $httpCode == 200) {
+        $data = json_decode($response, true);
+        $chave = $data['chave'] ?? null;
+        logDebug($chave ? "Chave remota obtida com sucesso" : "Chave não encontrada na resposta");
+        return $chave;
+    }
+    
+    logDebug("ERRO ao obter chave remota: HTTP=$httpCode");
+    return null;
 }
 
 function descriptografarURL($urlCodificada, $chave) {
     $parts = explode('::', base64_decode($urlCodificada), 2);
-    if (count($parts) < 2) return null;
+    if (count($parts) < 2) {
+        logDebug("ERRO: Formato de URL criptografada inválido");
+        return null;
+    }
     list($url_criptografada, $iv) = $parts;
-    return openssl_decrypt($url_criptografada, 'aes-256-cbc', $chave, 0, $iv);
+    $url = openssl_decrypt($url_criptografada, 'aes-256-cbc', $chave, 0, $iv);
+    logDebug($url ? "URL descriptografada com sucesso" : "ERRO ao descriptografar URL");
+    return $url;
 }
 
 function desenharTexto($im, $texto, $x, $y, $cor, $tamanho=12, $angulo=0, $fonteCustom = null) {
     $fontPath = __DIR__ . '/../fonts/CalSans-Regular.ttf';
     $fonteUsada = $fonteCustom ?? $fontPath;
+    
     if (file_exists($fonteUsada)) {
         $bbox = imagettfbbox($tamanho, $angulo, $fonteUsada, $texto);
         $alturaTexto = abs($bbox[7] - $bbox[1]);
         imagettftext($im, $tamanho, $angulo, $x, $y + $alturaTexto, $cor, $fonteUsada, $texto);
     } else {
+        logDebug("AVISO: Fonte não encontrada: $fonteUsada");
         imagestring($im, 5, $x, $y, $texto, $cor);
     }
 }
 
 function getImageFromJson($jsonPath) {
     static $cache = [];
-    if (isset($cache[$jsonPath])) return $cache[$jsonPath];
+    if (isset($cache[$jsonPath])) {
+        logDebug("Cache JSON HIT: $jsonPath");
+        return $cache[$jsonPath];
+    }
+    
+    logDebug("Carregando JSON: $jsonPath");
     
     $jsonContent = @file_get_contents($jsonPath);
-    if ($jsonContent === false) return $cache[$jsonPath] = null;
+    if ($jsonContent === false) {
+        logDebug("ERRO: Não foi possível ler JSON: $jsonPath");
+        return $cache[$jsonPath] = null;
+    }
     
     $data = json_decode($jsonContent, true);
-    if (empty($data) || !isset($data[0]['ImageName'])) return $cache[$jsonPath] = null;
+    if (empty($data) || !isset($data[0]['ImageName'])) {
+        logDebug("ERRO: JSON inválido ou sem ImageName: $jsonPath");
+        return $cache[$jsonPath] = null;
+    }
     
     $imagePath = str_replace('../', '', $data[0]['ImageName']);
-    if (!file_exists($imagePath)) return $cache[$jsonPath] = null;
+    if (!file_exists($imagePath)) {
+        logDebug("ERRO: Arquivo de imagem não existe: $imagePath");
+        return $cache[$jsonPath] = null;
+    }
     
-    return $cache[$jsonPath] = @file_get_contents($imagePath);
+    $content = @file_get_contents($imagePath);
+    logDebug($content ? "Imagem carregada: " . strlen($content) . " bytes" : "ERRO ao carregar imagem");
+    
+    return $cache[$jsonPath] = $content;
 }
 
 function centralizarTextoX($larguraImagem, $tamanhoFonte, $fonte, $texto) { 
-    if (!file_exists($fonte)) return $larguraImagem / 2;
+    if (!file_exists($fonte)) {
+        logDebug("AVISO: Fonte não encontrada para centralização: $fonte");
+        return $larguraImagem / 2;
+    }
     $caixa = imagettfbbox($tamanhoFonte, 0, $fonte, $texto); 
     return ($larguraImagem - ($caixa[2] - $caixa[0])) / 2; 
 }
@@ -255,11 +352,11 @@ function desenhar_retangulo_arredondado($image, $x, $y, $width, $height, $radius
 
 function obterJogosDeHoje() {
     $startTime = microtime(true);
-    error_log("INÍCIO BUSCA JOGOS: " . date('Y-m-d H:i:s'));
+    logDebug("=== INÍCIO BUSCA JOGOS ===");
     
     $chave_secreta = getChaveRemota();
     if (!$chave_secreta) {
-        error_log("ERRO: Não foi possível obter chave remota");
+        logDebug("ERRO CRÍTICO: Não foi possível obter chave remota");
         return [];
     }
     
@@ -267,33 +364,42 @@ function obterJogosDeHoje() {
     $json_url = descriptografarURL($parametro_criptografado, $chave_secreta);
     
     if (!$json_url) {
-        error_log("ERRO: Não foi possível descriptografar URL");
+        logDebug("ERRO CRÍTICO: Não foi possível descriptografar URL dos jogos");
         return [];
     }
+
+    logDebug("URL dos jogos obtida, fazendo requisição...");
 
     $jogos = [];
     $ch = curl_init($json_url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
     curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
     
     $json_content = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $error = curl_error($ch);
+    $info = curl_getinfo($ch);
     curl_close($ch);
     
     if ($json_content === false || $httpCode >= 400 || !empty($error)) {
-        error_log("ERRO BUSCA JOGOS: HTTP=$httpCode | Error=$error");
+        logDebug("ERRO BUSCA JOGOS: HTTP=$httpCode | Error=$error | Time={$info['total_time']}s");
         return [];
     }
     
+    logDebug("Resposta recebida: " . strlen($json_content) . " bytes");
+    
     $todos_jogos = json_decode($json_content, true);
     if (!is_array($todos_jogos)) {
-        error_log("ERRO: JSON inválido ou não é array");
+        logDebug("ERRO: JSON inválido ou não é array");
         return [];
     }
+    
+    logDebug("Total de jogos no JSON: " . count($todos_jogos));
     
     foreach ($todos_jogos as $jogo) {
         if (isset($jogo['data_jogo']) && $jogo['data_jogo'] === 'hoje') {
@@ -303,8 +409,33 @@ function obterJogosDeHoje() {
     
     $endTime = microtime(true);
     $duration = round($endTime - $startTime, 2);
-    error_log("FIM BUSCA JOGOS: " . count($jogos) . " jogos encontrados em {$duration}s");
+    logDebug("=== FIM BUSCA JOGOS: " . count($jogos) . " jogos de hoje encontrados em {$duration}s ===");
     
     return $jogos;
 }
+
+function verificarMemoriaERecursos() {
+    $memoryUsage = memory_get_usage(true);
+    $memoryPeak = memory_get_peak_usage(true);
+    $memoryLimit = ini_get('memory_limit');
+    
+    logDebug("MEMÓRIA: Atual=" . formatBytes($memoryUsage) . " | Pico=" . formatBytes($memoryPeak) . " | Limite=$memoryLimit");
+    
+    if ($memoryUsage > (1024 * 1024 * 100)) { // 100MB
+        logDebug("AVISO: Alto uso de memória detectado");
+    }
+}
+
+function formatBytes($bytes, $precision = 2) {
+    $units = array('B', 'KB', 'MB', 'GB', 'TB');
+    
+    for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+        $bytes /= 1024;
+    }
+    
+    return round($bytes, $precision) . ' ' . $units[$i];
+}
+
+// Verificar recursos no carregamento
+verificarMemoriaERecursos();
 ?>

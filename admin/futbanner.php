@@ -11,10 +11,13 @@ $pageTitle = isset($_GET['banner']) ? "Gerador de Banner" : "Selecionar Modelo d
 include "includes/header.php";
 
 // Obter dados dos jogos
+logDebug("=== INÍCIO FUTBANNER.PHP ===");
 $jogos = obterJogosDeHoje();
+logDebug("Jogos obtidos: " . count($jogos));
 
 $jogosPorBanner = 5;
 $gruposDeJogos = array_chunk(array_keys($jogos), $jogosPorBanner);
+logDebug("Grupos de jogos criados: " . count($gruposDeJogos));
 
 if (isset($_GET['banner'])) {
     // Tela de visualização dos banners
@@ -26,10 +29,13 @@ if (isset($_GET['banner'])) {
         case '2': $geradorScript = 'gerar_fut_2.php'; break;
         case '3': $geradorScript = 'gerar_fut_3.php'; break;
         default:
+            logDebug("ERRO: Tipo de banner inválido: $tipo_banner");
             echo "<div class='card'><div class='card-body text-center'><p class='text-danger'>Tipo de banner inválido!</p></div></div>";
             include "includes/footer.php";
             exit();
     }
+
+    logDebug("Tipo de banner selecionado: $tipo_banner | Script: $geradorScript");
 ?>
 
 <div class="page-header">
@@ -58,6 +64,9 @@ if (isset($_GET['banner'])) {
             </div>
             <h3 class="text-xl font-semibold mb-2">Nenhum jogo disponível</h3>
             <p class="text-muted">Não há jogos programados para hoje no momento.</p>
+            <div class="mt-4 text-sm text-muted">
+                <p>Debug: <?php echo count($jogos); ?> jogos encontrados</p>
+            </div>
         </div>
     </div>
 <?php else: ?>
@@ -76,13 +85,18 @@ if (isset($_GET['banner'])) {
                             <div class="banner-loading-overlay" id="loading-<?php echo $index; ?>">
                                 <div class="loading-spinner"></div>
                                 <span>Carregando banner...</span>
+                                <div class="loading-progress" id="progress-<?php echo $index; ?>">
+                                    <div class="progress-bar"></div>
+                                </div>
                             </div>
                             
                             <!-- Imagem do banner -->
                             <img id="banner-img-<?php echo $index; ?>" 
                                  class="banner-preview-image" 
                                  style="display: none;"
-                                 alt="Banner Parte <?php echo $index + 1; ?>">
+                                 alt="Banner Parte <?php echo $index + 1; ?>"
+                                 data-grupo="<?php echo $index; ?>"
+                                 data-script="<?php echo $geradorScript; ?>">
                             
                             <!-- Overlay de erro -->
                             <div class="banner-error-overlay" id="error-<?php echo $index; ?>" style="display: none;">
@@ -92,6 +106,7 @@ if (isset($_GET['banner'])) {
                                     <i class="fas fa-redo"></i> Tentar Novamente
                                 </button>
                                 <div class="error-details" id="error-details-<?php echo $index; ?>"></div>
+                                <div class="debug-info" id="debug-<?php echo $index; ?>"></div>
                             </div>
                         </div>
                         <a href="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>&download=1" 
@@ -109,6 +124,7 @@ if (isset($_GET['banner'])) {
 <?php
 } else {
     // Tela de seleção de modelo
+    logDebug("Exibindo tela de seleção de modelos");
 ?>
 
 <div class="page-header">
@@ -124,6 +140,9 @@ if (isset($_GET['banner'])) {
             </div>
             <h3 class="text-xl font-semibold mb-2">Nenhum jogo disponível</h3>
             <p class="text-muted">Não há jogos programados para hoje para gerar as prévias dos banners.</p>
+            <div class="mt-4 text-sm text-muted">
+                <p>Debug: Sistema funcionando, mas sem jogos para hoje</p>
+            </div>
         </div>
     </div>
 <?php else: ?>
@@ -141,12 +160,16 @@ if (isset($_GET['banner'])) {
                             <div class="banner-loading-overlay" id="model-loading-<?php echo $i; ?>">
                                 <div class="loading-spinner"></div>
                                 <span>Carregando modelo...</span>
+                                <div class="loading-progress">
+                                    <div class="progress-bar"></div>
+                                </div>
                             </div>
                             
                             <img id="model-img-<?php echo $i; ?>" 
                                  class="banner-preview-image" 
                                  style="display: none;"
-                                 alt="Prévia do Banner <?php echo $i; ?>">
+                                 alt="Prévia do Banner <?php echo $i; ?>"
+                                 data-model="<?php echo $i; ?>">
                             
                             <div class="banner-error-overlay" id="model-error-<?php echo $i; ?>" style="display: none;">
                                 <i class="fas fa-exclamation-triangle"></i>
@@ -154,6 +177,7 @@ if (isset($_GET['banner'])) {
                                 <button class="retry-btn" onclick="retryLoadModel(<?php echo $i; ?>)">
                                     <i class="fas fa-redo"></i> Tentar Novamente
                                 </button>
+                                <div class="debug-info" id="model-debug-<?php echo $i; ?>"></div>
                             </div>
                         </div>
                         <a href="?banner=<?php echo $i; ?>" class="btn btn-primary w-full mt-4 group-hover:bg-primary-600">
@@ -252,6 +276,7 @@ if (isset($_GET['banner'])) {
         justify-content: center;
         gap: 1rem;
         z-index: 2;
+        padding: 1rem;
     }
 
     .banner-error-overlay {
@@ -297,17 +322,45 @@ if (isset($_GET['banner'])) {
         animation: spin 1s linear infinite;
     }
 
-    .error-details {
+    .loading-progress {
+        width: 100%;
+        max-width: 200px;
+        height: 4px;
+        background: var(--border-color);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-top: 0.5rem;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: var(--primary-500);
+        width: 0%;
+        animation: progress 3s ease-in-out infinite;
+    }
+
+    .error-details, .debug-info {
         font-size: 0.75rem;
         color: var(--text-muted);
         margin-top: 0.5rem;
-        max-width: 200px;
+        max-width: 250px;
         word-wrap: break-word;
+        text-align: left;
+        background: var(--bg-tertiary);
+        padding: 0.5rem;
+        border-radius: 4px;
+        font-family: monospace;
     }
 
     @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
+    }
+
+    @keyframes progress {
+        0% { width: 0%; }
+        50% { width: 70%; }
+        100% { width: 100%; }
     }
 
     /* Utilities */
@@ -368,10 +421,11 @@ if (isset($_GET['banner'])) {
 <script>
 // Configurações globais
 const BANNER_CONFIG = {
-    maxRetries: 3,
-    retryDelay: 2000,
-    loadTimeout: 45000,
-    retryCount: {}
+    maxRetries: 5,
+    retryDelay: 3000,
+    loadTimeout: 90000, // 90 segundos
+    retryCount: {},
+    debugMode: true
 };
 
 // URLs dos geradores
@@ -381,25 +435,42 @@ const GENERATOR_URLS = {
     3: 'gerar_fut_3.php'
 };
 
+function debugLog(message) {
+    if (BANNER_CONFIG.debugMode) {
+        console.log(`[BANNER_DEBUG] ${new Date().toLocaleTimeString()}: ${message}`);
+    }
+}
+
+function updateDebugInfo(elementId, info) {
+    const debugElement = document.getElementById(elementId);
+    if (debugElement) {
+        debugElement.innerHTML = `<strong>Debug:</strong><br>${info}`;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Sistema de carregamento de banners inicializado');
+    debugLog('🚀 Sistema de carregamento de banners inicializado');
     
     <?php if (isset($_GET['banner'])): ?>
         // Carregar banners
         const bannerType = <?php echo json_encode($tipo_banner); ?>;
         const totalBanners = <?php echo count($gruposDeJogos); ?>;
         
-        console.log(`📊 Carregando ${totalBanners} banners do tipo ${bannerType}`);
+        debugLog(`📊 Carregando ${totalBanners} banners do tipo ${bannerType}`);
         
         for (let i = 0; i < totalBanners; i++) {
-            loadBanner(i, bannerType);
+            setTimeout(() => {
+                loadBanner(i, bannerType);
+            }, i * 1000); // Escalonar carregamento
         }
     <?php else: ?>
         // Carregar modelos
-        console.log('📊 Carregando 3 modelos de banner');
+        debugLog('📊 Carregando 3 modelos de banner');
         
         for (let i = 1; i <= 3; i++) {
-            loadModel(i);
+            setTimeout(() => {
+                loadModel(i);
+            }, (i - 1) * 1000); // Escalonar carregamento
         }
     <?php endif; ?>
 });
@@ -410,45 +481,58 @@ function loadBanner(index, bannerType) {
     const error = document.getElementById(`error-${index}`);
     
     if (!img || !loading || !error) {
-        console.error(`❌ Elementos não encontrados para banner ${index}`);
+        debugLog(`❌ Elementos não encontrados para banner ${index}`);
         return;
     }
+    
+    debugLog(`🔄 Iniciando carregamento do banner ${index}`);
     
     // Reset estado
     img.style.display = 'none';
     loading.style.display = 'flex';
     error.style.display = 'none';
     
-    // Construir URL com cache bust único
+    // Construir URL com cache bust único e timestamp
     const generatorScript = GENERATOR_URLS[bannerType] || 'gerar_fut.php';
-    const cacheBust = Date.now() + Math.random();
-    const url = `${generatorScript}?grupo=${index}&cache_bust=${cacheBust}`;
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(7);
+    const url = `${generatorScript}?grupo=${index}&t=${timestamp}&r=${random}`;
     
-    console.log(`🔄 Carregando banner ${index}: ${url}`);
+    debugLog(`📡 URL do banner ${index}: ${url}`);
+    updateDebugInfo(`debug-${index}`, `URL: ${url}<br>Tentativa: ${(BANNER_CONFIG.retryCount[`banner-${index}`] || 0) + 1}`);
     
-    // Timeout de segurança
+    // Timeout de segurança mais longo
     const timeoutId = setTimeout(() => {
-        console.log(`⏰ Timeout para banner ${index}`);
-        showBannerError(index, 'Timeout: Banner demorou muito para carregar');
+        debugLog(`⏰ Timeout para banner ${index} após ${BANNER_CONFIG.loadTimeout}ms`);
+        showBannerError(index, `Timeout: Banner demorou mais que ${BANNER_CONFIG.loadTimeout/1000}s para carregar`);
     }, BANNER_CONFIG.loadTimeout);
     
     // Configurar handlers da imagem
     img.onload = function() {
         clearTimeout(timeoutId);
-        console.log(`✅ Banner ${index} carregado com sucesso`);
+        debugLog(`✅ Banner ${index} carregado com sucesso`);
         loading.style.display = 'none';
         img.style.display = 'block';
         img.style.opacity = '1';
+        
+        // Verificar se a imagem realmente carregou
+        if (this.naturalWidth === 0 || this.naturalHeight === 0) {
+            debugLog(`⚠️ Banner ${index} carregou mas tem dimensões inválidas`);
+            showBannerError(index, 'Imagem carregada mas com dimensões inválidas');
+        } else {
+            debugLog(`📐 Banner ${index}: ${this.naturalWidth}x${this.naturalHeight}px`);
+        }
     };
     
     img.onerror = function() {
         clearTimeout(timeoutId);
-        console.log(`❌ Erro ao carregar banner ${index}`);
+        debugLog(`❌ Erro ao carregar banner ${index}`);
         showBannerError(index, 'Erro ao carregar imagem do banner');
     };
     
     // Iniciar carregamento
     img.src = url;
+    debugLog(`🎯 Carregamento iniciado para banner ${index}`);
 }
 
 function loadModel(modelNumber) {
@@ -457,9 +541,11 @@ function loadModel(modelNumber) {
     const error = document.getElementById(`model-error-${modelNumber}`);
     
     if (!img || !loading || !error) {
-        console.error(`❌ Elementos não encontrados para modelo ${modelNumber}`);
+        debugLog(`❌ Elementos não encontrados para modelo ${modelNumber}`);
         return;
     }
+    
+    debugLog(`🔄 Iniciando carregamento do modelo ${modelNumber}`);
     
     // Reset estado
     img.style.display = 'none';
@@ -468,34 +554,44 @@ function loadModel(modelNumber) {
     
     // Construir URL
     const generatorScript = GENERATOR_URLS[modelNumber] || 'gerar_fut.php';
-    const cacheBust = Date.now() + Math.random();
-    const url = `${generatorScript}?grupo=0&cache_bust=${cacheBust}`;
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(7);
+    const url = `${generatorScript}?grupo=0&t=${timestamp}&r=${random}`;
     
-    console.log(`🔄 Carregando modelo ${modelNumber}: ${url}`);
+    debugLog(`📡 URL do modelo ${modelNumber}: ${url}`);
+    updateDebugInfo(`model-debug-${modelNumber}`, `URL: ${url}<br>Tentativa: ${(BANNER_CONFIG.retryCount[`model-${modelNumber}`] || 0) + 1}`);
     
     // Timeout de segurança
     const timeoutId = setTimeout(() => {
-        console.log(`⏰ Timeout para modelo ${modelNumber}`);
-        showModelError(modelNumber, 'Timeout: Modelo demorou muito para carregar');
+        debugLog(`⏰ Timeout para modelo ${modelNumber}`);
+        showModelError(modelNumber, `Timeout: Modelo demorou mais que ${BANNER_CONFIG.loadTimeout/1000}s para carregar`);
     }, BANNER_CONFIG.loadTimeout);
     
     // Configurar handlers
     img.onload = function() {
         clearTimeout(timeoutId);
-        console.log(`✅ Modelo ${modelNumber} carregado com sucesso`);
+        debugLog(`✅ Modelo ${modelNumber} carregado com sucesso`);
         loading.style.display = 'none';
         img.style.display = 'block';
         img.style.opacity = '1';
+        
+        if (this.naturalWidth === 0 || this.naturalHeight === 0) {
+            debugLog(`⚠️ Modelo ${modelNumber} carregou mas tem dimensões inválidas`);
+            showModelError(modelNumber, 'Imagem carregada mas com dimensões inválidas');
+        } else {
+            debugLog(`📐 Modelo ${modelNumber}: ${this.naturalWidth}x${this.naturalHeight}px`);
+        }
     };
     
     img.onerror = function() {
         clearTimeout(timeoutId);
-        console.log(`❌ Erro ao carregar modelo ${modelNumber}`);
+        debugLog(`❌ Erro ao carregar modelo ${modelNumber}`);
         showModelError(modelNumber, 'Erro ao carregar imagem do modelo');
     };
     
     // Iniciar carregamento
     img.src = url;
+    debugLog(`🎯 Carregamento iniciado para modelo ${modelNumber}`);
 }
 
 function showBannerError(index, message) {
@@ -506,6 +602,8 @@ function showBannerError(index, message) {
     if (loading) loading.style.display = 'none';
     if (error) error.style.display = 'flex';
     if (errorDetails) errorDetails.textContent = message;
+    
+    debugLog(`💥 Erro no banner ${index}: ${message}`);
 }
 
 function showModelError(modelNumber, message) {
@@ -514,22 +612,28 @@ function showModelError(modelNumber, message) {
     
     if (loading) loading.style.display = 'none';
     if (error) error.style.display = 'flex';
+    
+    debugLog(`💥 Erro no modelo ${modelNumber}: ${message}`);
 }
 
 function retryLoadBanner(index) {
     const retryKey = `banner-${index}`;
     BANNER_CONFIG.retryCount[retryKey] = (BANNER_CONFIG.retryCount[retryKey] || 0) + 1;
     
+    debugLog(`🔄 Tentativa ${BANNER_CONFIG.retryCount[retryKey]} para banner ${index}`);
+    
     if (BANNER_CONFIG.retryCount[retryKey] > BANNER_CONFIG.maxRetries) {
         showBannerError(index, `Máximo de tentativas excedido (${BANNER_CONFIG.maxRetries})`);
+        debugLog(`🚫 Máximo de tentativas excedido para banner ${index}`);
         return;
     }
     
-    console.log(`🔄 Tentativa ${BANNER_CONFIG.retryCount[retryKey]} para banner ${index}`);
-    
     <?php if (isset($_GET['banner'])): ?>
     const bannerType = <?php echo json_encode($tipo_banner); ?>;
-    setTimeout(() => loadBanner(index, bannerType), BANNER_CONFIG.retryDelay);
+    setTimeout(() => {
+        debugLog(`⏳ Aguardando ${BANNER_CONFIG.retryDelay}ms antes de tentar novamente banner ${index}`);
+        loadBanner(index, bannerType);
+    }, BANNER_CONFIG.retryDelay);
     <?php endif; ?>
 }
 
@@ -537,26 +641,40 @@ function retryLoadModel(modelNumber) {
     const retryKey = `model-${modelNumber}`;
     BANNER_CONFIG.retryCount[retryKey] = (BANNER_CONFIG.retryCount[retryKey] || 0) + 1;
     
+    debugLog(`🔄 Tentativa ${BANNER_CONFIG.retryCount[retryKey]} para modelo ${modelNumber}`);
+    
     if (BANNER_CONFIG.retryCount[retryKey] > BANNER_CONFIG.maxRetries) {
         showModelError(modelNumber, `Máximo de tentativas excedido (${BANNER_CONFIG.maxRetries})`);
+        debugLog(`🚫 Máximo de tentativas excedido para modelo ${modelNumber}`);
         return;
     }
     
-    console.log(`🔄 Tentativa ${BANNER_CONFIG.retryCount[retryKey]} para modelo ${modelNumber}`);
-    setTimeout(() => loadModel(modelNumber), BANNER_CONFIG.retryDelay);
+    setTimeout(() => {
+        debugLog(`⏳ Aguardando ${BANNER_CONFIG.retryDelay}ms antes de tentar novamente modelo ${modelNumber}`);
+        loadModel(modelNumber);
+    }, BANNER_CONFIG.retryDelay);
 }
 
 // Debug: Log quando a página termina de carregar
 window.addEventListener('load', function() {
-    console.log('🎯 Página totalmente carregada');
+    debugLog('🎯 Página totalmente carregada');
 });
 
 // Expor funções globalmente para os botões
 window.retryLoadBanner = retryLoadBanner;
 window.retryLoadModel = retryLoadModel;
+
+// Monitor de performance
+setInterval(() => {
+    const memory = performance.memory;
+    if (memory) {
+        debugLog(`💾 Memória: ${Math.round(memory.usedJSHeapSize / 1024 / 1024)}MB usados`);
+    }
+}, 30000); // A cada 30 segundos
 </script>
 
 <?php
+logDebug("=== FIM FUTBANNER.PHP ===");
 } // Fim do if/else principal
 
 include "includes/footer.php";
