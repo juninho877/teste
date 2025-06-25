@@ -685,6 +685,16 @@ if (!isset($_SESSION["usuario"])) {
                     </a>
                 </div>
 
+                <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+                <div class="nav-section">
+                    <div class="nav-section-title">Administração</div>
+                    <a href="user_management.php" class="nav-item">
+                        <i class="fas fa-users"></i>
+                        <span>Gerenciar Usuários</span>
+                    </a>
+                </div>
+                <?php endif; ?>
+
                 <div class="nav-section">
                     <div class="nav-section-title">Sistema</div>
                     <a href="setting.php" class="nav-item">
@@ -701,7 +711,7 @@ if (!isset($_SESSION["usuario"])) {
                     </div>
                     <div class="user-details">
                         <h4><?php echo htmlspecialchars($_SESSION["usuario"]); ?></h4>
-                        <p>Administrador</p>
+                        <p><?php echo isset($_SESSION['role']) && $_SESSION['role'] === 'admin' ? 'Administrador' : 'Usuário'; ?></p>
                     </div>
                 </div>
                 <a href="logout.php" class="nav-item">

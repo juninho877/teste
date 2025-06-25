@@ -1,22 +1,37 @@
 <?php
 session_start();
-$pdo = new PDO("sqlite:api/.fzstoredev.db");
-$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+// Incluir as classes necessárias
+require_once 'config/database.php';
+require_once 'classes/User.php';
+
+// Inicializar banco de dados (criar tabelas se não existirem)
+try {
+    $db = Database::getInstance();
+    $db->createTables();
+} catch (Exception $e) {
+    $erro = "Erro de conexão com o banco de dados. Verifique as configurações.";
+}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = trim($_POST["username"]);
     $password = trim($_POST["password"]);
 
-    $stmt = $pdo->prepare("SELECT password FROM usuarios WHERE username = ?");
-    $stmt->execute([$username]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($user && password_verify($password, $user["password"])) {
-        $_SESSION["usuario"] = $username;
-        header("Location: index.php");
-        exit();
-    } else {
-        $erro = "Usuário ou senha inválidos!";
+    try {
+        $user = new User();
+        $result = $user->authenticate($username, $password);
+        
+        if ($result['success']) {
+            $_SESSION["usuario"] = $result['user']['username'];
+            $_SESSION["user_id"] = $result['user']['id'];
+            $_SESSION["role"] = $result['user']['role'];
+            header("Location: index.php");
+            exit();
+        } else {
+            $erro = $result['message'];
+        }
+    } catch (Exception $e) {
+        $erro = "Erro interno do sistema. Tente novamente.";
     }
 }
 ?>
@@ -265,6 +280,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 padding: 1.5rem;
             }
         }
+
+        .db-info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            color: var(--primary-600);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        [data-theme="dark"] .db-info {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--primary-400);
+        }
     </style>
 </head>
 <body>
@@ -310,6 +343,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <?php echo $erro; ?>
                     </div>
                 <?php endif; ?>
+
+                <div class="db-info">
+                    <i class="fas fa-info-circle"></i>
+                    Sistema migrado para MySQL. Configure o banco em config/database.php
+                </div>
             </form>
         </div>
     </div>
