@@ -5,14 +5,72 @@ if (!isset($_SESSION["usuario"])) {
     exit();
 }
 
-// Incluir classes necessárias
+// Handle different actions
+$action = $_GET['action'] ?? 'generate';
+
+// If action is view or download, serve the temporary file
+if (in_array($action, ['view', 'download'])) {
+    if (isset($_SESSION['current_banner_temp_path']) && file_exists($_SESSION['current_banner_temp_path'])) {
+        $tempPath = $_SESSION['current_banner_temp_path'];
+        $originalName = $_SESSION['current_banner_original_name'] ?? 'banner.png';
+        
+        header('Content-Type: image/png');
+        header('Content-Length: ' . filesize($tempPath));
+        
+        if ($action === 'download') {
+            header('Content-Disposition: attachment; filename="' . $originalName . '"');
+            header('Cache-Control: no-cache, no-store, must-revalidate');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+            
+            // Serve file and delete after download
+            if (readfile($tempPath)) {
+                unlink($tempPath);
+                unset($_SESSION['current_banner_temp_path']);
+                unset($_SESSION['current_banner_original_name']);
+            }
+        } else {
+            // Just serve the file for viewing
+            readfile($tempPath);
+        }
+        exit;
+    } else {
+        // File not found, redirect to search
+        header("Location: painel.php");
+        exit;
+    }
+}
+
+// Include necessary classes
 require_once 'classes/UserImage.php';
 
 $apiKey = 'ec8237f367023fbadd38ab6a1596b40c';
 $language = 'pt-BR';
 
 if (!isset($_GET['name'])) {
-    echo "Nome do filme ou série não especificado.";
+    $pageTitle = "Erro - Banner";
+    include "includes/header.php";
+    ?>
+    <div class="page-header">
+        <h1 class="page-title">Erro na Geração do Banner</h1>
+        <p class="page-subtitle">Nome do filme ou série não especificado</p>
+    </div>
+    
+    <div class="card">
+        <div class="card-body text-center py-12">
+            <div class="mb-4">
+                <i class="fas fa-exclamation-triangle text-6xl text-danger-500"></i>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Parâmetros Inválidos</h3>
+            <p class="text-muted mb-6">Nome do filme ou série não foi especificado.</p>
+            <a href="painel.php" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i>
+                Voltar para Busca
+            </a>
+        </div>
+    </div>
+    <?php
+    include "includes/footer.php";
     exit;
 }
 
@@ -42,8 +100,7 @@ try {
     }
 
     if (empty($searchData['results'])) {
-        echo "Nenhum filme ou série encontrado com o nome '$name'.";
-        exit;
+        throw new Exception("Nenhum filme ou série encontrado com o nome especificado");
     }
 
     $id = $searchData['results'][0]['id'];
@@ -316,8 +373,9 @@ try {
     imagettftext($image, 16, 0, 445, $imageHeight - 180, $whiteColor, $fontPath, "DISPONÍVEL EM DIVERSOS APARELHOS");
     
     // Gerar nome de arquivo temporário único
-    $tempFileName = 'banner_' . uniqid() . '_' . time() . '.png';
+    $tempFileName = 'banner_tema1_' . uniqid() . '_' . time() . '.png';
     $tempFilePath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $tempFileName;
+    $originalFileName = 'banner_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $nome) . '_tema1.png';
     
     // Salvar imagem no arquivo temporário
     if (!imagepng($image, $tempFilePath)) {
@@ -328,32 +386,215 @@ try {
     imagedestroy($image);
     imagedestroy($backgroundImage);
     
-    // Definir cabeçalhos para servir a imagem
-    $fileSize = filesize($tempFilePath);
-    header('Content-Type: image/png');
-    header('Content-Length: ' . $fileSize);
-    header('Content-Disposition: inline; filename="banner_' . $nome . '.png"');
-    header('Cache-Control: no-cache, no-store, must-revalidate');
-    header('Pragma: no-cache');
-    header('Expires: 0');
+    // Armazenar informações na sessão
+    $_SESSION['current_banner_temp_path'] = $tempFilePath;
+    $_SESSION['current_banner_original_name'] = $originalFileName;
     
-    // Enviar o arquivo e deletar imediatamente
-    if (readfile($tempFilePath)) {
-        unlink($tempFilePath); // Deletar arquivo temporário
-    }
+    // Exibir página com layout completo
+    $pageTitle = "Banner Gerado - Tema 1";
+    include "includes/header.php";
+    ?>
     
-    exit;
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-image text-primary-500 mr-3"></i>
+            Banner Gerado com Sucesso
+        </h1>
+        <p class="page-subtitle">Tema 1 - <?php echo htmlspecialchars($nome); ?></p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Banner Preview -->
+        <div class="lg:col-span-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Prévia do Banner</h3>
+                    <p class="card-subtitle">Seu banner personalizado está pronto</p>
+                </div>
+                <div class="card-body">
+                    <div class="banner-preview-container">
+                        <img src="gerar_banner.php?action=view" alt="Banner Gerado" class="banner-preview-image">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions Panel -->
+        <div class="space-y-6">
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Ações Disponíveis</h3>
+                </div>
+                <div class="card-body">
+                    <div class="space-y-3">
+                        <a href="gerar_banner.php?action=download&name=<?php echo urlencode($_GET['name']); ?>&type=<?php echo urlencode($_GET['type'] ?? 'filme'); ?>&year=<?php echo urlencode($_GET['year'] ?? ''); ?>" class="btn btn-primary w-full">
+                            <i class="fas fa-download"></i>
+                            Baixar Banner
+                        </a>
+                        
+                        <a href="send_telegram.php?banner_path=<?php echo urlencode($tempFilePath); ?>&banner_name=<?php echo urlencode($originalFileName); ?>" class="btn btn-success w-full">
+                            <i class="fab fa-telegram"></i>
+                            Enviar para Telegram
+                        </a>
+                        
+                        <a href="painel.php" class="btn btn-secondary w-full">
+                            <i class="fas fa-search"></i>
+                            Nova Busca
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Banner Info -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Informações do Banner</h3>
+                </div>
+                <div class="card-body">
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-muted">Título:</span>
+                            <span class="font-medium"><?php echo htmlspecialchars($nome); ?></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-muted">Tipo:</span>
+                            <span><?php echo $tipoTexto; ?></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-muted">Tema:</span>
+                            <span>Tema 1 (Clássico)</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-muted">Resolução:</span>
+                            <span>1280x853px</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-muted">Formato:</span>
+                            <span>PNG</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Try Other Themes -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Outros Temas</h3>
+                </div>
+                <div class="card-body">
+                    <div class="space-y-2">
+                        <a href="gerar_banner2.php?name=<?php echo urlencode($_GET['name']); ?>&type=<?php echo urlencode($_GET['type'] ?? 'filme'); ?>&year=<?php echo urlencode($_GET['year'] ?? ''); ?>" class="btn btn-outline w-full text-sm">
+                            <i class="fas fa-palette"></i>
+                            Tema 2 (Moderno)
+                        </a>
+                        <a href="gerar_banner3.php?name=<?php echo urlencode($_GET['name']); ?>&type=<?php echo urlencode($_GET['type'] ?? 'filme'); ?>&year=<?php echo urlencode($_GET['year'] ?? ''); ?>" class="btn btn-outline w-full text-sm">
+                            <i class="fas fa-magic"></i>
+                            Tema 3 (Premium)
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .banner-preview-container {
+            width: 100%;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+        }
+
+        .banner-preview-image {
+            max-width: 100%;
+            max-height: 600px;
+            height: auto;
+            border-radius: var(--border-radius-sm);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .space-y-2 > * + * {
+            margin-top: 0.5rem;
+        }
+
+        .space-y-3 > * + * {
+            margin-top: 0.75rem;
+        }
+
+        .space-y-6 > * + * {
+            margin-top: 1.5rem;
+        }
+
+        .w-full {
+            width: 100%;
+        }
+
+        .text-sm {
+            font-size: 0.875rem;
+        }
+
+        .mr-3 {
+            margin-right: 0.75rem;
+        }
+
+        @media (max-width: 768px) {
+            .banner-preview-container {
+                min-height: 300px;
+                padding: 0.5rem;
+            }
+        }
+    </style>
+
+    <?php
+    include "includes/footer.php";
 
 } catch (Exception $e) {
-    // Em caso de erro, retornar uma imagem de erro
-    header('Content-Type: image/png');
-    $errorImage = imagecreatetruecolor(800, 200);
-    $bgColor = imagecolorallocate($errorImage, 255, 255, 255);
-    $textColor = imagecolorallocate($errorImage, 255, 0, 0);
-    imagefill($errorImage, 0, 0, $bgColor);
-    imagestring($errorImage, 5, 50, 90, "Erro: " . $e->getMessage(), $textColor);
-    imagepng($errorImage);
-    imagedestroy($errorImage);
-    exit;
+    // Em caso de erro, exibir página de erro com layout
+    $pageTitle = "Erro - Banner";
+    include "includes/header.php";
+    ?>
+    
+    <div class="page-header">
+        <h1 class="page-title">Erro na Geração do Banner</h1>
+        <p class="page-subtitle">Ocorreu um problema ao processar sua solicitação</p>
+    </div>
+
+    <div class="card">
+        <div class="card-body text-center py-12">
+            <div class="mb-4">
+                <i class="fas fa-exclamation-triangle text-6xl text-danger-500"></i>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Erro no Sistema</h3>
+            <p class="text-muted mb-6"><?php echo htmlspecialchars($e->getMessage()); ?></p>
+            <div class="flex gap-4 justify-center">
+                <a href="painel.php" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i>
+                    Voltar para Busca
+                </a>
+                <button onclick="location.reload()" class="btn btn-secondary">
+                    <i class="fas fa-redo"></i>
+                    Tentar Novamente
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <?php
+    include "includes/footer.php";
 }
 ?>
