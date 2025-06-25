@@ -84,9 +84,9 @@ if (isset($_GET['banner'])) {
     </div>
 <?php else: ?>
     <!-- Grid com 2 colunas para banners -->
-    <div class="banners-container">
+    <div class="banners-grid">
         <?php foreach ($gruposDeJogos as $index => $grupo): ?>
-            <div class="banner-item">
+            <div class="banner-card-wrapper">
                 <div class="card banner-card">
                     <div class="card-header">
                         <h3 class="card-title">Banner Parte <?php echo $index + 1; ?></h3>
@@ -126,6 +126,28 @@ if (isset($_GET['banner'])) {
     // Tela de seleção de modelo
 ?>
 
+<!-- Modal de Progresso para Modelos -->
+<div id="loadingModal" class="loading-modal">
+    <div class="loading-modal-content">
+        <div class="loading-header">
+            <h3>Carregando Modelos</h3>
+            <p>Por favor, aguarde enquanto os modelos são carregados...</p>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text">
+                <span id="progressText">0%</span>
+                <span id="progressStatus">Iniciando...</span>
+            </div>
+        </div>
+        <div class="loading-animation">
+            <div class="spinner"></div>
+        </div>
+    </div>
+</div>
+
 <div class="page-header">
     <h1 class="page-title">Escolha o Modelo de Banner</h1>
     <p class="page-subtitle">Selecione o estilo que melhor se adequa às suas necessidades</p>
@@ -143,9 +165,9 @@ if (isset($_GET['banner'])) {
     </div>
 <?php else: ?>
     <!-- Grid com 3 colunas para seleção de modelos -->
-    <div class="models-container">
+    <div class="models-grid">
         <?php for ($i = 1; $i <= 3; $i++): ?>
-            <div class="model-item">
+            <div class="model-card-wrapper">
                 <div class="card model-card group hover:shadow-xl transition-all duration-300">
                     <div class="card-header">
                         <h3 class="card-title">Banner Modelo <?php echo $i; ?></h3>
@@ -180,47 +202,59 @@ if (isset($_GET['banner'])) {
 <?php endif; ?>
 
 <style>
-    /* Container para banners - 2 colunas */
-    .banners-container {
+    /* Grid para banners - 2 colunas fixas */
+    .banners-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, 1fr);
         gap: 2rem;
         margin-bottom: 2rem;
     }
 
-    /* Container para modelos - 3 colunas */
-    .models-container {
+    /* Grid para modelos - 3 colunas fixas */
+    .models-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: repeat(3, 1fr);
         gap: 1.5rem;
         margin-bottom: 2rem;
     }
 
+    /* Wrappers dos cards */
+    .banner-card-wrapper,
+    .model-card-wrapper {
+        width: 100%;
+        min-width: 0; /* Permite que o conteúdo seja comprimido */
+    }
+
     /* Responsividade para tablets */
     @media (max-width: 1024px) {
-        .banners-container {
+        .banners-grid {
             grid-template-columns: 1fr;
             gap: 1.5rem;
         }
-        .models-container {
-            grid-template-columns: 1fr 1fr;
+        .models-grid {
+            grid-template-columns: repeat(2, 1fr);
             gap: 1.5rem;
         }
     }
 
     /* Responsividade para mobile */
     @media (max-width: 768px) {
-        .banners-container,
-        .models-container {
+        .banners-grid,
+        .models-grid {
             grid-template-columns: 1fr;
             gap: 1rem;
         }
-    }
-
-    /* Items dos grids */
-    .banner-item,
-    .model-item {
-        width: 100%;
+        
+        /* Ajustes específicos para mobile */
+        .banner-preview-container {
+            height: auto;
+            min-height: 200px;
+        }
+        
+        .model-preview {
+            height: auto;
+            min-height: 150px;
+        }
     }
 
     /* Modal de Loading */
@@ -434,6 +468,23 @@ if (isset($_GET['banner'])) {
 
     .group-hover\:bg-primary-600:hover {
         background-color: var(--primary-600);
+    }
+
+    /* Ajustes específicos para mobile */
+    @media (max-width: 480px) {
+        .loading-modal-content {
+            padding: 1.5rem;
+            margin: 1rem;
+        }
+        
+        .card-header,
+        .card-body {
+            padding: 1rem;
+        }
+        
+        .banner-preview-container {
+            min-height: 150px;
+        }
     }
 </style>
 
