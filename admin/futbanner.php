@@ -121,13 +121,6 @@ if (isset($_GET['banner'])) {
                 <?php endforeach; ?>
             </div>
         </div>
-        
-        <div class="modal-footer">
-            <button id="skipBannersBtn" class="btn btn-secondary">
-                <i class="fas fa-forward"></i>
-                Pular Carregamento
-            </button>
-        </div>
     </div>
 </div>
 
@@ -557,7 +550,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initBannerProgress() {
     const modal = document.getElementById('bannerProgressModal');
-    const skipBtn = document.getElementById('skipBannersBtn');
     const images = document.querySelectorAll('.banner-preview-image');
     
     let loadedCount = 0;
@@ -616,15 +608,17 @@ function initBannerProgress() {
         updateBannerStatus(index, 'loading');
     });
     
-    // Botão pular
-    skipBtn.addEventListener('click', function() {
-        isSkipped = true;
-        modal.classList.remove('active');
-    });
-    
-    // Permitir navegação livre
+    // Permitir navegação livre - clique em qualquer lugar para fechar
     document.addEventListener('click', function(e) {
         if (e.target.closest('a[href]') && !e.target.closest('#bannerProgressModal')) {
+            isSkipped = true;
+            modal.classList.remove('active');
+        }
+    });
+    
+    // Fechar modal clicando no overlay
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
             isSkipped = true;
             modal.classList.remove('active');
         }
@@ -701,6 +695,14 @@ function initModelProgress() {
     // Permitir navegação livre
     document.addEventListener('click', function(e) {
         if (e.target.closest('a[href]') && !e.target.closest('#modelProgressModal')) {
+            isSkipped = true;
+            modal.classList.remove('active');
+        }
+    });
+    
+    // Fechar modal clicando no overlay
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
             isSkipped = true;
             modal.classList.remove('active');
         }
