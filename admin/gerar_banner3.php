@@ -375,83 +375,45 @@ try {
     $wrappedSinopse = wrapText($sinopse, $fontPath, $fontSize, $maxWidth);
     imagettftext($image, $fontSize, 0, 445, 390, $whiteColor, $fontPath, $wrappedSinopse);
 
-    // Salvar imagem
-    $relativePath = 'img/' . $id . '_media.png';
-    $outputPath = __DIR__ . '/' . $relativePath;
+    // Gerar nome de arquivo temporário único
+    $tempFileName = 'banner_' . uniqid() . '_' . time() . '.png';
+    $tempFilePath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $tempFileName;
     
-    // Criar diretório se não existir
-    $imgDir = dirname($outputPath);
-    if (!is_dir($imgDir)) {
-        mkdir($imgDir, 0755, true);
-    }
-    
-    if (!imagepng($image, $outputPath)) {
-        throw new Exception("Erro ao salvar a imagem");
+    // Salvar imagem no arquivo temporário
+    if (!imagepng($image, $tempFilePath)) {
+        throw new Exception("Erro ao salvar a imagem temporária");
     }
 
     // Limpar memória
     imagedestroy($image);
     imagedestroy($backgroundImage);
+    
+    // Definir cabeçalhos para servir a imagem
+    $fileSize = filesize($tempFilePath);
+    header('Content-Type: image/png');
+    header('Content-Length: ' . $fileSize);
+    header('Content-Disposition: inline; filename="banner_' . $nome . '.png"');
+    header('Cache-Control: no-cache, no-store, must-revalidate');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+    
+    // Enviar o arquivo e deletar imediatamente
+    if (readfile($tempFilePath)) {
+        unlink($tempFilePath); // Deletar arquivo temporário
+    }
+    
+    exit;
 
 } catch (Exception $e) {
-    echo "Erro: " . $e->getMessage();
+    // Em caso de erro, retornar uma imagem de erro
+    header('Content-Type: image/png');
+    $errorImage = imagecreatetruecolor(800, 200);
+    $bgColor = imagecolorallocate($errorImage, 255, 255, 255);
+    $textColor = imagecolorallocate($errorImage, 255, 0, 0);
+    imagefill($errorImage, 0, 0, $bgColor);
+    imagestring($errorImage, 5, 50, 90, "Erro: " . $e->getMessage(), $textColor);
+    imagepng($errorImage);
+    imagedestroy($errorImage);
     exit;
 }
 ?>
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Banner Gerado</title>
-    <style>
-        body { 
-            background: #111; 
-            color: #fff; 
-            text-align: center; 
-            font-family: Arial, sans-serif; 
-            padding: 40px; 
-        }
-        .container { 
-            max-width: 800px; 
-            margin: auto; 
-        }
-        img { 
-            max-width: 100%; 
-            height: auto; 
-            margin-bottom: 20px; 
-            border: 4px solid #00bcd4; 
-        }
-        a.button, button.button {
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 10px;
-            background-color: #00bcd4;
-            color: #fff;
-            text-decoration: none;
-            border: none;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        a.button:hover, button.button:hover {
-            background-color: #0097a7;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Banner Gerado com Sucesso!</h1>
-        <img src="<?= $relativePath ?>" alt="Banner do Filme/Série">
-        <br>
-        <?php
-            $protocolo = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
-            $baseURL = $protocolo . "://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']);
-            $urlCompleta = rtrim($baseURL, '/') . '/' . $relativePath;
-        ?>
-        <a class="button" href="<?= $relativePath ?>" target="_blank">Ver Imagem</a>
-        <a class="button" href="<?= $relativePath ?>" download>Baixar Imagem</a>
-        <button class="button" onclick="navigator.clipboard.writeText('<?= $urlCompleta ?>').then(() => alert('URL copiada!'));">Copiar URL</button>
-        <a class="button" href="painel.php">Nova Busca</a>
-    </div>
-</body>
-</html>
