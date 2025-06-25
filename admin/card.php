@@ -1,5 +1,4 @@
 <?php
-// Sua lógica PHP para o 'card.php' foi mantida integralmente.
 session_start();
 if (!isset($_SESSION["usuario"])) {
     header("Location: login.php");
@@ -71,7 +70,7 @@ if (file_exists($jsonPath)) {
         $filenamex = $jsonDatax[0]['ImageName'] ?? '';
         $uploadmethord = $jsonDatax[0]['Upload_type'] ?? 'default';
         if ($uploadmethord == "by_file" && !empty($filenamex)) {
-            $imageFilex = str_replace('../', '/admin/', $filenamex); // Ajuste de caminho para exibição
+            $imageFilex = str_replace('../', '/admin/', $filenamex);
             $methord = "Arquivo Enviado";
             $showPreview = true;
         } elseif ($uploadmethord == "by_url" && filter_var($filenamex, FILTER_VALIDATE_URL)) {
@@ -86,81 +85,25 @@ $pageTitle = "Gerenciar Cards";
 include "includes/header.php"; 
 ?>
 
-<style>
-    .two-column-grid {
-        display: grid;
-        grid-template-columns: 1fr; /* Padrão mobile */
-        gap: 30px;
-    }
-    @media (min-width: 768px) {
-        .two-column-grid {
-            grid-template-columns: 1fr 1fr; /* 2 colunas em telas maiores */
-        }
-    }
-    .column-box {
-        background: rgba(0,0,0,0.15);
-        padding: 25px;
-        border-radius: 10px;
-    }
-    .column-box h3 {
-        color: var(--accent-color);
-        margin-bottom: 20px;
-        font-weight: 600;
-        border-bottom: 1px solid var(--accent-color);
-        padding-bottom: 10px;
-    }
-    .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; }
-    .form-select, .form-control {
-        width: 100%; padding: 12px 15px; background-color: var(--page-bg);
-        border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: var(--text-color);
-    }
-    .form-select:focus, .form-control:focus { outline: none; border-color: var(--accent-color); }
-    
-    .preview-area {
-        width: 100%;
-        height: 200px;
-        margin-top: 15px;
-        background-color: var(--page-bg);
-        border: 2px dashed rgba(255,255,255,0.2);
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-    }
-    .preview-area img { max-width: 100%; max-height: 100%; object-fit: contain; } /* 'contain' é melhor para logos/cards */
-    .current-method-info { text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-top: 15px; }
-    .current-method-info strong { color: var(--accent-color); }
-    
-    .method-switcher { display: flex; border-radius: 8px; overflow: hidden; }
-    .method-switcher input[type="radio"] { display: none; }
-    .method-switcher label {
-        flex: 1; text-align: center; padding: 12px; cursor: pointer;
-        background-color: rgba(0,0,0,0.2); color: var(--text-muted);
-        transition: all 0.3s; font-weight: 500;
-    }
-    .method-switcher input[type="radio"]:checked + label { background-color: var(--accent-color); color: #fff; }
-
-    .submit-btn {
-        width: 100%; padding: 12px; font-size: 1rem; font-weight: 600; color: #fff;
-        border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s;
-        background-color: var(--success-color);
-    }
-    .submit-btn:hover { background-color: #218838; transform: translateY(-2px); }
-</style>
-
 <div class="page-header">
-    <h1><i class="fas fa-th-large" style="color: var(--accent-color);"></i> Gerenciar Cards</h1>
+    <h1 class="page-title">
+        <i class="fas fa-th-large text-primary-500 mr-3"></i>
+        Gerenciar Cards
+    </h1>
+    <p class="page-subtitle">Configure os cards utilizados nos banners</p>
 </div>
 
-<div class="content-card">
-    <div class="two-column-grid">
-        <div class="column-box">
-            <h3>1. Selecione e Visualize</h3>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Preview Section -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Visualização</h3>
+            <p class="card-subtitle">Selecione e visualize o card atual</p>
+        </div>
+        <div class="card-body">
             <div class="form-group">
-                <label for="card-selector">Card para Editar:</label>
-                <select id="card-selector" class="form-select">
+                <label for="card-selector" class="form-label">Card para Editar:</label>
+                <select id="card-selector" class="form-input form-select">
                     <?php foreach ($card_types as $key => $details): ?>
                         <option value="<?= $key ?>" <?= ($key == $current_card_key) ? 'selected' : '' ?>>
                             <?= htmlspecialchars($details['name']) ?>
@@ -169,63 +112,216 @@ include "includes/header.php";
                 </select>
             </div>
             
-            <label>Prévia Atual:</label>
-            <div class="preview-area">
-                <?php if ($showPreview): ?>
-                    <img src="<?= $imageFilex ?>?v=<?= time() ?>" alt="Preview do Card">
-                <?php else: ?>
-                    <span style="color: var(--text-muted);">Nenhum card definido.</span>
-                <?php endif; ?>
+            <div class="preview-container">
+                <label class="form-label">Prévia Atual:</label>
+                <div class="preview-area">
+                    <?php if ($showPreview): ?>
+                        <img src="<?= $imageFilex ?>?v=<?= time() ?>" alt="Preview do Card" class="preview-image">
+                    <?php else: ?>
+                        <div class="preview-placeholder">
+                            <i class="fas fa-image text-4xl text-gray-400 mb-2"></i>
+                            <span class="text-gray-500">Nenhum card definido</span>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <div class="current-method-info">
+                    <span class="method-badge">Método Atual: <strong><?= $methord ?></strong></span>
+                </div>
             </div>
-            <p class="current-method-info">Método Atual: <strong><?= $methord ?></strong></p>
         </div>
+    </div>
 
-        <div class="column-box">
-            <h3>2. Altere a Imagem</h3>
+    <!-- Upload Section -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Alterar Card</h3>
+            <p class="card-subtitle">Envie um novo arquivo ou use uma URL</p>
+        </div>
+        <div class="card-body">
             <div class="method-switcher">
                 <input type="radio" id="upload-radio" name="upload-type" value="file" checked>
-                <label for="upload-radio"><i class="fas fa-upload"></i> Enviar Arquivo</label>
+                <label for="upload-radio">
+                    <i class="fas fa-upload"></i>
+                    Enviar Arquivo
+                </label>
                 
                 <input type="radio" id="url-radio" name="upload-type" value="url">
-                <label for="url-radio"><i class="fas fa-link"></i> Usar URL</label>
+                <label for="url-radio">
+                    <i class="fas fa-link"></i>
+                    Usar URL
+                </label>
             </div>
-            <div class="forms-container" style="margin-top: 20px;">
+
+            <div class="forms-container">
+                <!-- Upload Form -->
                 <form method="post" enctype="multipart/form-data" id="upload-form" class="method-form" action="card.php?tipo=<?= $current_card_key ?>">
                     <input type="hidden" name="card_type" value="<?= $current_card_key ?>">
                     <div class="form-group">
-                        <label for="image">Selecione uma imagem (PNG, JPG, GIF, WebP):</label>
-                        <input class="form-control" type="file" name="image" id="image" accept="image/*">
+                        <label for="image" class="form-label">Selecione uma imagem:</label>
+                        <input class="form-input" type="file" name="image" id="image" accept="image/*">
+                        <p class="form-help">Formatos aceitos: PNG, JPG, GIF, WebP</p>
                     </div>
-                    <button class="submit-btn" type="submit" name="upload"><i class="fas fa-paper-plane"></i> Enviar</button>
+                    <button class="btn btn-primary w-full" type="submit" name="upload">
+                        <i class="fas fa-upload"></i>
+                        Enviar Arquivo
+                    </button>
                 </form>
 
+                <!-- URL Form -->
                 <form method="post" id="url-form" class="method-form" style="display: none;" action="card.php?tipo=<?= $current_card_key ?>">
                     <input type="hidden" name="card_type" value="<?= $current_card_key ?>">
                     <div class="form-group">
-                        <label for="image-url">Insira a URL da imagem:</label>
-                        <input class="form-control" type="text" name="image-url" id="image-url" placeholder="https://...">
+                        <label for="image-url" class="form-label">URL da imagem:</label>
+                        <input class="form-input" type="text" name="image-url" id="image-url" placeholder="https://exemplo.com/card.png">
+                        <p class="form-help">Insira a URL completa da imagem</p>
                     </div>
-                    <button class="submit-btn" type="submit" name="url-submit"><i class="fas fa-save"></i> Salvar URL</button>
+                    <button class="btn btn-primary w-full" type="submit" name="url-submit">
+                        <i class="fas fa-save"></i>
+                        Salvar URL
+                    </button>
                 </form>
             </div>
         </div>
     </div>
 </div>
 
+<style>
+    .preview-container {
+        margin-top: 1.5rem;
+    }
+
+    .preview-area {
+        width: 100%;
+        height: 200px;
+        background: var(--bg-secondary);
+        border: 2px dashed var(--border-color);
+        border-radius: var(--border-radius);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 0.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .preview-image {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .preview-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: var(--text-muted);
+    }
+
+    .current-method-info {
+        text-align: center;
+        margin-top: 1rem;
+    }
+
+    .method-badge {
+        display: inline-block;
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+        padding: 0.5rem 1rem;
+        border-radius: var(--border-radius-sm);
+        font-size: 0.875rem;
+    }
+
+    .method-badge strong {
+        color: var(--primary-500);
+    }
+
+    .method-switcher {
+        display: flex;
+        background: var(--bg-tertiary);
+        border-radius: var(--border-radius);
+        padding: 0.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .method-switcher input[type="radio"] {
+        display: none;
+    }
+
+    .method-switcher label {
+        flex: 1;
+        text-align: center;
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        border-radius: var(--border-radius-sm);
+        transition: var(--transition);
+        font-weight: 500;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .method-switcher input[type="radio"]:checked + label {
+        background: var(--primary-500);
+        color: white;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .forms-container {
+        margin-bottom: 1.5rem;
+    }
+
+    .method-form {
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .form-help {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Dark theme adjustments */
+    [data-theme="dark"] .preview-placeholder {
+        color: var(--text-muted);
+    }
+
+    [data-theme="dark"] .text-gray-400 {
+        color: var(--text-muted);
+    }
+
+    [data-theme="dark"] .text-gray-500 {
+        color: var(--text-muted);
+    }
+</style>
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Lógica do seletor de card
     const cardSelector = document.getElementById('card-selector');
     cardSelector.addEventListener('change', function() {
         window.location.href = 'card.php?tipo=' + this.value;
     });
 
-    // Lógica do switcher de formulário
     const uploadRadio = document.getElementById('upload-radio');
     const urlRadio = document.getElementById('url-radio');
     const uploadForm = document.getElementById('upload-form');
     const urlForm = document.getElementById('url-form');
+    
     function switchForms() {
         if (uploadRadio.checked) {
             uploadForm.style.display = 'block';
@@ -235,27 +331,33 @@ document.addEventListener('DOMContentLoaded', function() {
             urlForm.style.display = 'block';
         }
     }
+    
     uploadRadio.addEventListener('change', switchForms);
     urlRadio.addEventListener('change', switchForms);
-    switchForms(); // Executa ao carregar
+    switchForms();
 
-    // Lógica do SweetAlert
     <?php if (!empty($successMessage)): ?>
     Swal.fire({
-        title: 'Sucesso!', text: '<?= addslashes($successMessage) ?>', icon: 'success',
-        background: '#2c2f4a', color: '#f1f1f1', confirmButtonColor: 'var(--success-color)'
+        title: 'Sucesso!',
+        text: '<?= addslashes($successMessage) ?>',
+        icon: 'success',
+        background: document.body.getAttribute('data-theme') === 'dark' ? '#1e293b' : '#ffffff',
+        color: document.body.getAttribute('data-theme') === 'dark' ? '#f1f5f9' : '#1e293b',
+        confirmButtonColor: '#3b82f6'
     }).then(() => {
         window.location.href = window.location.pathname + '?tipo=<?= $redirect_card_key ?>';
     });
     <?php elseif (!empty($errorMessage)): ?>
     Swal.fire({
-        title: 'Erro!', text: '<?= addslashes($errorMessage) ?>', icon: 'error',
-        background: '#2c2f4a', color: '#f1f1f1', confirmButtonColor: 'var(--danger-color)'
+        title: 'Erro!',
+        text: '<?= addslashes($errorMessage) ?>',
+        icon: 'error',
+        background: document.body.getAttribute('data-theme') === 'dark' ? '#1e293b' : '#ffffff',
+        color: document.body.getAttribute('data-theme') === 'dark' ? '#f1f5f9' : '#1e293b',
+        confirmButtonColor: '#ef4444'
     });
     <?php endif; ?>
 });
 </script>
 
-<?php 
-include "includes/footer.php"; 
-?>
+<?php include "includes/footer.php"; ?>

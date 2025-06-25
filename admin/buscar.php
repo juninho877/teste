@@ -152,6 +152,186 @@ if (isset($_GET['query']) && !empty($_GET['query'])) {
         overflow: hidden;
     }
     
+    .relative {
+        position: relative;
+    }
+    
+    .absolute {
+        position: absolute;
+    }
+    
+    .top-3 {
+        top: 0.75rem;
+    }
+    
+    .right-3 {
+        right: 0.75rem;
+    }
+    
+    .left-3 {
+        left: 0.75rem;
+    }
+    
+    .bg-black {
+        background-color: rgb(0 0 0);
+    }
+    
+    .bg-opacity-75 {
+        background-color: rgb(0 0 0 / 0.75);
+    }
+    
+    .text-white {
+        color: rgb(255 255 255);
+    }
+    
+    .px-2 {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    
+    .py-1 {
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+    }
+    
+    .rounded-lg {
+        border-radius: var(--border-radius);
+    }
+    
+    .text-sm {
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+    }
+    
+    .text-xs {
+        font-size: 0.75rem;
+        line-height: 1rem;
+    }
+    
+    .font-semibold {
+        font-weight: 600;
+    }
+    
+    .uppercase {
+        text-transform: uppercase;
+    }
+    
+    .text-yellow-400 {
+        color: rgb(250 204 21);
+    }
+    
+    .mr-1 {
+        margin-right: 0.25rem;
+    }
+    
+    .mb-2 {
+        margin-bottom: 0.5rem;
+    }
+    
+    .mb-4 {
+        margin-bottom: 1rem;
+    }
+    
+    .mb-6 {
+        margin-bottom: 1.5rem;
+    }
+    
+    .mt-auto {
+        margin-top: auto;
+    }
+    
+    .w-full {
+        width: 100%;
+    }
+    
+    .h-80 {
+        height: 20rem;
+    }
+    
+    .object-cover {
+        object-fit: cover;
+    }
+    
+    .overflow-hidden {
+        overflow: hidden;
+    }
+    
+    .transition-transform {
+        transition-property: transform;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 150ms;
+    }
+    
+    .duration-300 {
+        transition-duration: 300ms;
+    }
+    
+    .group:hover .group-hover\:scale-105 {
+        transform: scale(1.05);
+    }
+    
+    .text-lg {
+        font-size: 1.125rem;
+        line-height: 1.75rem;
+    }
+    
+    .text-xl {
+        font-size: 1.25rem;
+        line-height: 1.75rem;
+    }
+    
+    .text-6xl {
+        font-size: 3.75rem;
+        line-height: 1;
+    }
+    
+    .text-4xl {
+        font-size: 2.25rem;
+        line-height: 2.5rem;
+    }
+    
+    .py-12 {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+    
+    .bg-gray-200 {
+        background-color: var(--bg-tertiary);
+    }
+    
+    .text-gray-300 {
+        color: var(--text-muted);
+    }
+    
+    .text-gray-400 {
+        color: var(--text-muted);
+    }
+    
+    .flex {
+        display: flex;
+    }
+    
+    .items-center {
+        align-items: center;
+    }
+    
+    .justify-center {
+        justify-content: center;
+    }
+    
+    .text-center {
+        text-align: center;
+    }
+    
+    .text-warning-500 {
+        color: var(--warning-500);
+    }
+    
+    .bg-primary-500 {
+        background-color: var(--primary-500);
+    }
+    
+    /* Dark theme adjustments */
     [data-theme="dark"] .bg-gray-200 {
         background-color: var(--bg-tertiary);
     }

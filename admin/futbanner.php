@@ -115,13 +115,13 @@ if (isset($_GET['banner'])) {
                     <p class="card-subtitle"><?php echo count($grupo); ?> jogos neste banner</p>
                 </div>
                 <div class="card-body">
-                    <div class="mb-4">
+                    <div class="banner-preview-container">
                         <img src="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>" 
                              alt="Banner Parte <?php echo $index + 1; ?>" 
-                             class="w-full h-auto rounded-lg border border-gray-200 shadow-sm">
+                             class="banner-preview-image">
                     </div>
                     <a href="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>&download=1" 
-                       class="btn btn-primary w-full">
+                       class="btn btn-primary w-full mt-4">
                         <i class="fas fa-download"></i>
                         Baixar Banner
                     </a>
@@ -152,21 +152,6 @@ if (isset($_GET['banner'])) {
         </div>
     </div>
 <?php else: ?>
-    <!-- Loading Modal -->
-    <div id="loadingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <div class="text-center">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-                <h3 class="text-lg font-semibold mb-2">Preparando Visualização</h3>
-                <p class="text-muted mb-4">Carregando prévias dos banners...</p>
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div id="progressBar" class="bg-primary-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
-                </div>
-                <p id="loadingStatus" class="text-sm text-muted mt-2">Iniciando...</p>
-            </div>
-        </div>
-    </div>
-
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <?php for ($i = 1; $i <= 3; $i++): ?>
             <div class="card group hover:shadow-xl transition-all duration-300">
@@ -175,18 +160,18 @@ if (isset($_GET['banner'])) {
                     <p class="card-subtitle">Estilo profissional e moderno</p>
                 </div>
                 <div class="card-body">
-                    <div class="relative mb-6 bg-gray-100 rounded-lg overflow-hidden" style="aspect-ratio: 16/9;">
+                    <div class="banner-preview-container">
+                        <div class="banner-loading-placeholder">
+                            <div class="loading-spinner"></div>
+                            <span>Carregando prévia...</span>
+                        </div>
                         <img src="gerar_fut<?php echo $i > 1 ? '_' . $i : ''; ?>.php?grupo=0" 
                              alt="Prévia do Banner <?php echo $i; ?>" 
-                             class="w-full h-full object-cover preview-image opacity-0 transition-opacity duration-300"
-                             onload="this.style.opacity='1'">
-                        <div class="absolute inset-0 flex items-center justify-center bg-gray-200">
-                            <div class="animate-pulse">
-                                <i class="fas fa-image text-4xl text-gray-400"></i>
-                            </div>
-                        </div>
+                             class="banner-preview-image"
+                             onload="this.previousElementSibling.style.display='none'; this.style.opacity='1';"
+                             onerror="this.previousElementSibling.innerHTML='<i class=\'fas fa-exclamation-triangle\'></i><span>Erro ao carregar</span>';">
                     </div>
-                    <a href="?banner=<?php echo $i; ?>" class="btn btn-primary w-full group-hover:bg-primary-600">
+                    <a href="?banner=<?php echo $i; ?>" class="btn btn-primary w-full mt-4 group-hover:bg-primary-600">
                         <i class="fas fa-check"></i>
                         Usar este Modelo
                     </a>
@@ -197,62 +182,144 @@ if (isset($_GET['banner'])) {
 <?php endif; ?>
 
 <style>
-    [data-theme="dark"] .bg-gray-100 {
-        background-color: var(--bg-tertiary);
+    .banner-preview-container {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16/9;
+        background: var(--bg-secondary);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        border: 1px solid var(--border-color);
     }
-    
-    [data-theme="dark"] .bg-gray-200 {
-        background-color: var(--bg-secondary);
+
+    .banner-preview-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0;
+        transition: opacity 0.3s ease;
     }
-    
+
+    .banner-loading-placeholder {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-secondary);
+        color: var(--text-muted);
+        font-size: 0.875rem;
+        gap: 1rem;
+    }
+
+    .loading-spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid var(--border-color);
+        border-top: 3px solid var(--primary-500);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .flex-wrap {
+        flex-wrap: wrap;
+    }
+
+    .py-12 {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+
+    .text-6xl {
+        font-size: 3.75rem;
+        line-height: 1;
+    }
+
+    .text-xl {
+        font-size: 1.25rem;
+        line-height: 1.75rem;
+    }
+
+    .font-semibold {
+        font-weight: 600;
+    }
+
+    .mb-2 {
+        margin-bottom: 0.5rem;
+    }
+
+    .mb-4 {
+        margin-bottom: 1rem;
+    }
+
+    .mb-6 {
+        margin-bottom: 1.5rem;
+    }
+
+    .mt-4 {
+        margin-top: 1rem;
+    }
+
+    .w-full {
+        width: 100%;
+    }
+
+    /* Dark theme adjustments */
     [data-theme="dark"] .text-gray-300 {
         color: var(--text-muted);
     }
-    
-    [data-theme="dark"] .text-gray-400 {
-        color: var(--text-muted);
-    }
-    
-    [data-theme="dark"] .border-gray-200 {
-        border-color: var(--border-color);
-    }
-    
-    .flex-wrap {
-        flex-wrap: wrap;
+
+    [data-theme="dark"] .text-warning-500 {
+        color: #f59e0b;
     }
 </style>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const modal = document.getElementById('loadingModal');
-        const statusText = document.getElementById('loadingStatus');
-        const progressBar = document.getElementById('progressBar');
-        const previewImages = document.querySelectorAll('.preview-image');
-        const totalImages = previewImages.length;
-        let loadedImages = 0;
+        // Permitir navegação mesmo durante carregamento
+        const images = document.querySelectorAll('.banner-preview-image');
+        let loadedCount = 0;
+        const totalImages = images.length;
 
-        if (totalImages === 0) return;
-
-        // Show loading modal
-        modal.classList.remove('hidden');
-
-        const handleImageLoad = () => {
-            loadedImages++;
-            const percentage = (loadedImages / totalImages) * 100;
-            progressBar.style.width = percentage + '%';
-            statusText.textContent = `Carregando banner ${loadedImages} de ${totalImages}...`;
-            
-            if (loadedImages === totalImages) {
-                statusText.textContent = "Finalizando...";
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                }, 500);
-            }
-        };
+        // Não bloquear navegação - remover qualquer overlay ou modal de loading
         
-        previewImages.forEach(image => {
-            image.onload = handleImageLoad;
-            image.onerror = handleImageLoad;
+        images.forEach((image, index) => {
+            // Timeout para evitar travamento em caso de erro
+            const timeout = setTimeout(() => {
+                if (image.style.opacity === '0' || image.style.opacity === '') {
+                    const placeholder = image.previousElementSibling;
+                    if (placeholder) {
+                        placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Timeout ao carregar</span>';
+                    }
+                }
+            }, 10000); // 10 segundos timeout
+
+            image.onload = () => {
+                clearTimeout(timeout);
+                loadedCount++;
+                image.style.opacity = '1';
+                const placeholder = image.previousElementSibling;
+                if (placeholder) {
+                    placeholder.style.display = 'none';
+                }
+            };
+
+            image.onerror = () => {
+                clearTimeout(timeout);
+                const placeholder = image.previousElementSibling;
+                if (placeholder) {
+                    placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Erro ao carregar</span>';
+                }
+            };
         });
     });
 </script>
