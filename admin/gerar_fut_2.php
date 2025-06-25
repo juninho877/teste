@@ -14,172 +14,7 @@ if (!isset($_SESSION["usuario"])) {
     exit();
 }
 
-// Configurações otimizadas
-define('CLOUDINARY_CLOUD_NAME', 'dvi4kawwq');
-define('LOGO_OVERRIDES', [
-    'St. Louis City' => 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/21812.png',
-    'Guarulhos' => 'https://upload.wikimedia.org/wikipedia/pt/d/d5/GuarulhosGRU.png',
-    'Estados Unidos' => 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/countries/500/usa.png',
-    'Tupa' => 'https://static.flashscore.com/res/image/data/8SqNKfdM-27lsDqoa.png',
-    'Tanabi' => 'https://ssl.gstatic.com/onebox/media/sports/logos/_0PCb1YBKcxp8eXBCCtZpg_96x96.png',
-]);
-
-// Cache simples
-$imageCache = [];
-
-function carregarEscudo(string $nomeTime, ?string $url, int $maxSize = 60) {
-    global $imageCache;
-    
-    if (!empty($url)) {
-        $cacheKey = md5($url . $maxSize);
-        if (isset($imageCache[$cacheKey])) {
-            return $imageCache[$cacheKey];
-        }
-        
-        $imagem = _processarImagemDeUrl($url, $maxSize);
-        if ($imagem) { 
-            $imageCache[$cacheKey] = $imagem;
-            return $imagem; 
-        }
-    }
-    return _criarPlaceholderComNome($nomeTime, $maxSize);
-}
-
-function _processarImagemDeUrl(string $url, int $maxSize) {
-    $urlParaCarregar = $url;
-    $extensao = strtolower(pathinfo($url, PATHINFO_EXTENSION));
-    
-    if ($extensao === 'svg') {
-        $cloudinaryCloudName = CLOUDINARY_CLOUD_NAME;
-        if (empty($cloudinaryCloudName)) return false;
-        $urlParaCarregar = "https://res.cloudinary.com/{$cloudinaryCloudName}/image/fetch/f_png/" . urlencode($url);
-    }
-    
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $urlParaCarregar);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 1);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
-    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (compatible; FutBanner/1.0)');
-    
-    $imageContent = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    if ($imageContent === false || $httpCode >= 400) return false;
-    
-    $img = @imagecreatefromstring($imageContent);
-    if (!$img) return false;
-
-    $w = imagesx($img); $h = imagesy($img);
-    if ($w == 0 || $h == 0) { imagedestroy($img); return false; }
-    
-    $scale = min($maxSize / $w, $maxSize / $h, 1.0);
-    $newW = (int)($w * $scale); $newH = (int)($h * $scale);
-    $imgResized = imagecreatetruecolor($newW, $newH);
-    imagealphablending($imgResized, false); imagesavealpha($imgResized, true);
-    imagecopyresampled($imgResized, $img, 0, 0, 0, 0, $newW, $newH, $w, $h);
-    imagedestroy($img);
-    return $imgResized;
-}
-
-function _criarPlaceholderComNome(string $nomeTime, int $size = 68) {
-    $img = imagecreatetruecolor($size, $size);
-    imagealphablending($img, false); imagesavealpha($img, true);
-    $transparent = imagecolorallocatealpha($img, 0, 0, 0, 127);
-    imagefill($img, 0, 0, $transparent);
-    $textColor = imagecolorallocate($img, 80, 80, 80);
-    $fontePath = __DIR__ . '/fonts/RobotoCondensed-Bold.ttf';
-    
-    if (!file_exists($fontePath)) { 
-        imagestring($img, 2, 2, $size/2 - 5, "No Logo", $textColor); 
-        return $img; 
-    }
-    
-    $nomeLimpo = trim(preg_replace('/\s*\([^)]*\)/', '', $nomeTime));
-    $palavras = explode(' ', $nomeLimpo);
-    $linhas = []; $linhaAtual = '';
-    
-    foreach ($palavras as $palavra) {
-        $testeLinha = $linhaAtual . ($linhaAtual ? ' ' : '') . $palavra;
-        $bbox = imagettfbbox(10.5, 0, $fontePath, $testeLinha);
-        $larguraTeste = $bbox[2] - $bbox[0];
-        if ($larguraTeste > ($size - 8) && $linhaAtual !== '') {
-            $linhas[] = $linhaAtual; $linhaAtual = $palavra;
-        } else { $linhaAtual = $testeLinha; }
-    }
-    $linhas[] = $linhaAtual;
-    
-    $bbox = imagettfbbox(10.5, 0, $fontePath, "A");
-    $alturaLinha = abs($bbox[7] - $bbox[1]);
-    $espacoEntreLinhas = 2;
-    $alturaTotalTexto = (count($linhas) * $alturaLinha) + ((count($linhas) - 1) * $espacoEntreLinhas);
-    $y = ($size - $alturaTotalTexto) / 2 + $alturaLinha;
-    
-    foreach ($linhas as $linha) {
-        $bboxLinha = imagettfbbox(10.5, 0, $fontePath, $linha);
-        $larguraLinha = $bboxLinha[2] - $bboxLinha[0];
-        $x = ($size - $larguraLinha) / 2;
-        imagettftext($img, 10.5, 0, (int)$x, (int)$y, $textColor, $fontePath, $linha);
-        $y += $alturaLinha + $espacoEntreLinhas;
-    }
-    return $img;
-}
-
-function getChaveRemota() {
-    $url_base64 = 'aHR0cHM6Ly9hcGlmdXQucHJvamVjdHguY2xpY2svQXV0b0FwaS9BRVMvY29uZmlna2V5LnBocA==';
-    $auth_base64 = 'dmFxdW9UQlpFb0U4QmhHMg==';
-    $url = base64_decode($url_base64); $auth = base64_decode($auth_base64);
-    $postData = json_encode(['auth' => $auth]);
-    
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); 
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Content-Length: ' . strlen($postData)]);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $postData); 
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
-    
-    $response = curl_exec($ch);
-    curl_close($ch);
-    return $response ? json_decode($response, true)['chave'] ?? null : null;
-}
-
-function descriptografarURL($urlCodificada, $chave) {
-    $parts = explode('::', base64_decode($urlCodificada), 2);
-    if(count($parts) < 2) return null;
-    list($url_criptografada, $iv) = $parts;
-    return openssl_decrypt($url_criptografada, 'aes-256-cbc', $chave, 0, $iv);
-}
-
-function desenharTexto($im, $texto, $x, $y, $cor, $tamanho=12, $angulo=0, $fonteCustom = null) {
-    $fontPath = __DIR__ . '/fonts/CalSans-Regular.ttf';
-    $fonteUsada = $fonteCustom ?? $fontPath;
-    if (file_exists($fonteUsada)) {
-        $bbox = imagettfbbox($tamanho, $angulo, $fonteUsada, $texto);
-        $alturaTexto = abs($bbox[7] - $bbox[1]);
-        imagettftext($im, $tamanho, $angulo, $x, $y + $alturaTexto, $cor, $fonteUsada, $texto);
-    } else {
-        imagestring($im, 5, $x, $y, $texto, $cor);
-    }
-}
-
-function getImageFromJson($jsonPath) {
-    static $cache = [];
-    if (isset($cache[$jsonPath])) return $cache[$jsonPath];
-    
-    $jsonContent = @file_get_contents($jsonPath);
-    if ($jsonContent === false) return $cache[$jsonPath] = null;
-    
-    $data = json_decode($jsonContent, true);
-    if (empty($data) || !isset($data[0]['ImageName'])) return $cache[$jsonPath] = null;
-    
-    $imagePath = str_replace('../', '', $data[0]['ImageName']);
-    return $cache[$jsonPath] = @file_get_contents($imagePath);
-}
+require_once 'includes/banner_functions.php';
 
 function gerarBanner($im, $jogos, $grupoJogos, $padding, $heightPorJogo, $width, $preto, $branco, $fontLiga) {
     static $fundoJogo = null;
@@ -269,8 +104,8 @@ function gerarBanner($im, $jogos, $grupoJogos, $padding, $heightPorJogo, $width,
     setlocale(LC_TIME, 'pt_BR.utf8', 'pt_BR.UTF-8', 'pt_BR', 'portuguese');
     $dataTexto = mb_strtoupper(strftime('%A - %d de %B'), 'UTF-8');
     
-    $xTitulo1 = centralizarTexto($width, 36, $fonteTitulo, $titulo1);
-    $xData = centralizarTexto($width, 17, $fonteData, $dataTexto);
+    $xTitulo1 = centralizarTextoX($width, 36, $fonteTitulo, $titulo1);
+    $xData = centralizarTextoX($width, 17, $fonteData, $dataTexto);
     
     imagettftext($im, 36, 0, $xTitulo1, 65, $corBranco, $fonteTitulo, $titulo1);
     imagettftext($im, 17, 0, $xData, 90, $corBranco, $fonteData, $dataTexto);
@@ -293,38 +128,7 @@ function gerarBanner($im, $jogos, $grupoJogos, $padding, $heightPorJogo, $width,
     }
 }
 
-function centralizarTexto($larguraImagem, $tamanhoFonte, $fonte, $texto) {
-    if (!file_exists($fonte)) return 0;
-    $caixa = imagettfbbox($tamanhoFonte, 0, $fonte, $texto);
-    $larguraTexto = $caixa[2] - $caixa[0];
-    return ($larguraImagem - $larguraTexto) / 2;
-}
-
-$chave_secreta = getChaveRemota();
-$parametro_criptografado = 'SVI0Sjh1MTJuRkw1bmFyeFdPb3cwOXA2TFo3RWlSQUxLbkczaGE4MXBiMWhENEpOWkhkSFZoeURaWFVDM1lTZzo6RNBu5BBhzmFRkTPPSikeJg==';
-$json_url = $chave_secreta ? descriptografarURL($parametro_criptografado, $chave_secreta) : null;
-
-$jogos = [];
-if ($json_url) {
-    $ch = curl_init($json_url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
-    $json_content = curl_exec($ch);
-    curl_close($ch);
-    
-    if ($json_content !== false) {
-        $todos_jogos = json_decode($json_content, true);
-        if ($todos_jogos !== null) { 
-            foreach ($todos_jogos as $jogo) {
-                if (isset($jogo['data_jogo']) && $jogo['data_jogo'] === 'hoje') {
-                    $jogos[] = $jogo;
-                }
-            }
-        }
-    }
-}
+$jogos = obterJogosDeHoje();
 
 if (empty($jogos)) {
     header('Content-Type: image/png'); 

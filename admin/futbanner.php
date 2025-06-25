@@ -5,63 +5,13 @@ if (!isset($_SESSION["usuario"])) {
     exit();
 }
 
+require_once 'includes/banner_functions.php';
+
 $pageTitle = isset($_GET['banner']) ? "Gerador de Banner" : "Selecionar Modelo de Banner";
 include "includes/header.php";
 
-// Funções de criptografia e busca de dados (simplificadas)
-function getChaveRemota() {
-    $url_base64 = 'aHR0cHM6Ly9hcGlmdXQucHJvamVjdHguY2xpY2svQXV0b0FwaS9BRVMvY29uZmlna2V5LnBocA==';
-    $auth_base64 = 'dmFxdW9UQlpFb0U4QmhHMg==';
-    $url = base64_decode($url_base64);
-    $auth = base64_decode($auth_base64);
-    $postData = json_encode(['auth' => $auth]);
-
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST => true,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Content-Length: ' . strlen($postData)],
-        CURLOPT_POSTFIELDS => $postData,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_TIMEOUT => 5,
-        CURLOPT_CONNECTTIMEOUT => 3
-    ]);
-    $response = curl_exec($ch);
-    curl_close($ch);
-    return $response ? json_decode($response, true)['chave'] ?? null : null;
-}
-
-function descriptografarURL($urlCodificada, $chave) {
-    list($url_criptografada, $iv) = explode('::', base64_decode($urlCodificada), 2);
-    return openssl_decrypt($url_criptografada, 'aes-256-cbc', $chave, 0, $iv);
-}
-
 // Obter dados dos jogos
-$chave_secreta = getChaveRemota();
-$parametro_criptografado = 'SVI0Sjh1MTJuRkw1bmFyeFdPb3cwOXA2TFo3RWlSQUxLbkczaGE4MXBiMWhENEpOWkhkSFZoeURaWFVDM1lTZzo6RNBu5BBhzmFRkTPPSikeJg==';
-$json_url = $chave_secreta ? descriptografarURL($parametro_criptografado, $chave_secreta) : null;
-
-$jogos = [];
-if ($json_url) {
-    $ch = curl_init($json_url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
-    $json_content = curl_exec($ch);
-    curl_close($ch);
-
-    if ($json_content !== false) {
-        $todos_jogos = json_decode($json_content, true);
-        if (is_array($todos_jogos)) {
-            foreach ($todos_jogos as $jogo) {
-                if (isset($jogo['data_jogo']) && $jogo['data_jogo'] === 'hoje') {
-                    $jogos[] = $jogo;
-                }
-            }
-        }
-    }
-}
+$jogos = obterJogosDeHoje();
 
 $jogosPorBanner = 5;
 $gruposDeJogos = array_chunk(array_keys($jogos), $jogosPorBanner);
@@ -120,10 +70,15 @@ if (isset($_GET['banner'])) {
                 </div>
                 <div class="card-body">
                     <div class="banner-preview-container">
+                        <div class="loading-overlay">
+                            <div class="loading-spinner"></div>
+                            <span>Carregando...</span>
+                        </div>
                         <img src="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>" 
                              alt="Banner Parte <?php echo $index + 1; ?>" 
                              class="banner-preview-image"
-                             loading="lazy">
+                             onload="hideLoading(this)"
+                             onerror="showError(this)">
                     </div>
                     <a href="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>&download=1" 
                        class="btn btn-primary w-full mt-4" target="_blank">
@@ -157,7 +112,7 @@ if (isset($_GET['banner'])) {
         </div>
     </div>
 <?php else: ?>
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <?php for ($i = 1; $i <= 3; $i++): ?>
             <div class="card group hover:shadow-xl transition-all duration-300">
                 <div class="card-header">
@@ -166,10 +121,15 @@ if (isset($_GET['banner'])) {
                 </div>
                 <div class="card-body">
                     <div class="banner-preview-container">
+                        <div class="loading-overlay">
+                            <div class="loading-spinner"></div>
+                            <span>Carregando...</span>
+                        </div>
                         <img src="gerar_fut<?php echo $i > 1 ? '_' . $i : ''; ?>.php?grupo=0" 
                              alt="Prévia do Banner <?php echo $i; ?>" 
                              class="banner-preview-image"
-                             loading="lazy">
+                             onload="hideLoading(this)"
+                             onerror="showError(this)">
                     </div>
                     <a href="?banner=<?php echo $i; ?>" class="btn btn-primary w-full mt-4 group-hover:bg-primary-600">
                         <i class="fas fa-check"></i>
@@ -199,11 +159,52 @@ if (isset($_GET['banner'])) {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        opacity: 0;
         transition: opacity 0.3s ease;
     }
 
-    .banner-preview-image[loading="lazy"] {
+    .banner-preview-image.loaded {
+        opacity: 1;
+    }
+
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
         background: var(--bg-secondary);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        z-index: 2;
+        transition: opacity 0.3s ease;
+    }
+
+    .loading-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--border-color);
+        border-top: 3px solid var(--primary-500);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .error-state {
+        color: var(--text-muted);
+        text-align: center;
     }
 
     .flex-wrap {
@@ -257,49 +258,49 @@ if (isset($_GET['banner'])) {
     [data-theme="dark"] .text-warning-500 {
         color: #f59e0b;
     }
-
-    /* Loading state */
-    .banner-preview-image {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill='%23e2e8f0'%3E%3Ccircle cx='50' cy='50' r='4'%3E%3Canimate attributeName='opacity' values='1;0;1' dur='1s' repeatCount='indefinite'/%3E%3C/circle%3E%3Ccircle cx='30' cy='50' r='4'%3E%3Canimate attributeName='opacity' values='1;0;1' dur='1s' begin='0.2s' repeatCount='indefinite'/%3E%3C/circle%3E%3Ccircle cx='70' cy='50' r='4'%3E%3Canimate attributeName='opacity' values='1;0;1' dur='1s' begin='0.4s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: center;
-        background-size: 50px 50px;
-    }
-
-    .banner-preview-image[src] {
-        background-image: none;
-    }
 </style>
 
 <script>
+function hideLoading(img) {
+    const container = img.closest('.banner-preview-container');
+    const overlay = container.querySelector('.loading-overlay');
+    if (overlay) {
+        overlay.classList.add('hidden');
+    }
+    img.classList.add('loaded');
+}
+
+function showError(img) {
+    const container = img.closest('.banner-preview-container');
+    const overlay = container.querySelector('.loading-overlay');
+    if (overlay) {
+        overlay.innerHTML = `
+            <div class="error-state">
+                <i class="fas fa-exclamation-triangle text-4xl mb-2"></i>
+                <p>Erro ao carregar banner</p>
+            </div>
+        `;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Simples e eficaz - sem complicações
+    // Timeout para mostrar erro se demorar muito
     const images = document.querySelectorAll('.banner-preview-image');
     
     images.forEach(function(img) {
-        // Timeout para mostrar erro se demorar muito
         const timeout = setTimeout(function() {
-            if (!img.complete) {
-                img.style.opacity = '0.5';
-                img.alt = 'Erro ao carregar banner';
+            if (!img.classList.contains('loaded')) {
+                showError(img);
             }
-        }, 10000); // 10 segundos
+        }, 15000); // 15 segundos
         
         img.addEventListener('load', function() {
             clearTimeout(timeout);
-            img.style.opacity = '1';
         });
         
         img.addEventListener('error', function() {
             clearTimeout(timeout);
-            img.style.opacity = '0.5';
-            img.alt = 'Erro ao carregar banner';
         });
-    });
-    
-    // Permitir navegação livre - sem travamentos
-    window.addEventListener('beforeunload', function() {
-        // Não fazer nada que possa travar
     });
 });
 </script>
