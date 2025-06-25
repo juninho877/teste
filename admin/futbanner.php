@@ -594,15 +594,15 @@ function loadBanner(index, script) {
     
     console.log(`Carregando banner ${index}: ${url}`);
     
-    // Timeout aumentado para 30 segundos
+    // Timeout aumentado para 60 segundos (2x mais que antes)
     const timeout = setTimeout(() => {
-        console.log(`Timeout para banner ${index}`);
+        console.log(`Timeout para banner ${index} após 60 segundos`);
         showError(index, 'Timeout ao carregar banner');
         updateBannerStatus(index, 'error');
         failedBanners++;
         loadedBanners++;
         updateProgress();
-    }, 30000);
+    }, 60000); // 60 segundos
     
     img.onload = function() {
         clearTimeout(timeout);
@@ -673,9 +673,11 @@ function retryBanner(index) {
     
     console.log(`Tentativa ${retryCount[index]} para banner ${index}`);
     
-    // Delay progressivo
-    const delay = retryCount[index] * 1000;
+    // Delay progressivo (mais tempo entre tentativas)
+    const delay = retryCount[index] * 2000; // 2, 4, 6 segundos
     setTimeout(() => {
+        // Decrementar loadedBanners para reprocessar
+        loadedBanners--;
         loadBanner(index, script);
     }, delay);
 }
@@ -698,11 +700,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Mostrar modal de progresso
         showProgressModal();
         
-        // Carregar banners com delay escalonado
+        // Carregar banners com delay escalonado (mais tempo entre cada um)
         banners.forEach((banner, i) => {
             setTimeout(() => {
                 loadBanner(banner.index, banner.script);
-            }, i * 1000); // 1 segundo entre cada banner
+            }, i * 2000); // 2 segundos entre cada banner (antes era 1)
         });
     <?php endif; ?>
 });
@@ -787,12 +789,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const images = document.querySelectorAll('.banner-preview-image');
     
     images.forEach(function(img) {
+        // Timeout aumentado para prévias também
         const timeout = setTimeout(function() {
             if (!img.complete) {
                 img.style.opacity = '0.5';
                 img.alt = 'Erro ao carregar prévia';
             }
-        }, 10000);
+        }, 15000); // 15 segundos para prévias
         
         img.addEventListener('load', function() {
             clearTimeout(timeout);
