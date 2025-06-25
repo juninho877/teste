@@ -216,7 +216,7 @@ if (isset($_GET['banner'])) {
         display: grid;
         grid-template-columns: 1fr;
         gap: 2rem;
-        max-width: 1400px;
+        max-width: 1600px;
         margin: 0 auto;
     }
 
@@ -302,16 +302,41 @@ if (isset($_GET['banner'])) {
         color: var(--danger-500);
     }
 
-    /* Container da Prévia */
+    /* Container da Prévia - DIMENSÕES AUMENTADAS */
     .banner-preview-container {
         position: relative;
         width: 100%;
-        height: 300px;
+        height: 450px; /* Aumentado de 300px para 450px */
         background: var(--bg-secondary);
         display: flex;
         align-items: center;
         justify-content: center;
         overflow: hidden;
+    }
+
+    /* Responsivo para diferentes tamanhos */
+    @media (min-width: 1200px) {
+        .banner-preview-container {
+            height: 500px; /* Ainda maior em telas grandes */
+        }
+    }
+
+    @media (max-width: 991px) {
+        .banner-preview-container {
+            height: 400px; /* Menor em tablets */
+        }
+    }
+
+    @media (max-width: 768px) {
+        .banner-preview-container {
+            height: 350px; /* Menor em mobile */
+        }
+    }
+
+    @media (max-width: 480px) {
+        .banner-preview-container {
+            height: 300px; /* Mínimo em mobile pequeno */
+        }
     }
 
     .banner-preview-image {
@@ -689,36 +714,6 @@ if (isset($_GET['banner'])) {
 
     [data-theme="dark"] .text-danger-500 {
         color: #ef4444;
-    }
-
-    /* Responsividade adicional */
-    @media (max-width: 768px) {
-        .banners-grid {
-            gap: 1.5rem;
-        }
-        
-        .banner-card-header {
-            padding: 1rem;
-        }
-        
-        .banner-actions {
-            padding: 1rem;
-        }
-        
-        .banner-preview-container {
-            height: 250px;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .banner-preview-container {
-            height: 200px;
-        }
-        
-        .loading-placeholder,
-        .error-placeholder {
-            padding: 1rem;
-        }
     }
 </style>
 
