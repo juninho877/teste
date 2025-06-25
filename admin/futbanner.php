@@ -723,6 +723,9 @@ const maxRetries = 3;
 let totalBanners = 0;
 let loadedBanners = 0;
 let failedBanners = 0;
+let loadingAborted = false;
+let activeTimeouts = [];
+let activeImages = [];
 
 function showProgressModal() {
     const modal = document.getElementById('progressModal');
@@ -788,12 +791,43 @@ function updateBannerStatus(index, status) {
     }
 }
 
+function abortAllOperations() {
+    loadingAborted = true;
+    console.log('🛑 Abortando todas as operações de carregamento...');
+    
+    // Limpar todos os timeouts ativos
+    activeTimeouts.forEach(timeout => {
+        clearTimeout(timeout);
+    });
+    activeTimeouts = [];
+    
+    // Abortar carregamento de todas as imagens ativas
+    activeImages.forEach(img => {
+        if (img && img.src) {
+            img.onload = null;
+            img.onerror = null;
+            img.src = '';
+        }
+    });
+    activeImages = [];
+    
+    // Fechar modal se estiver aberto
+    hideProgressModal();
+    
+    console.log('✅ Todas as operações foram abortadas');
+}
+
 function loadBanner(index, script) {
+    if (loadingAborted) return;
+    
     const img = document.getElementById(`banner-img-${index}`);
     const loading = document.getElementById(`loading-${index}`);
     const error = document.getElementById(`error-${index}`);
     
     if (!img || !loading || !error) return;
+    
+    // Adicionar à lista de imagens ativas
+    activeImages.push(img);
     
     // Atualizar status no modal e card
     updateBannerStatus(index, 'loading');
@@ -808,11 +842,12 @@ function loadBanner(index, script) {
     const random = Math.random().toString(36).substring(7);
     const url = `${script}?grupo=${index}&_t=${timestamp}&_r=${random}`;
     
-    console.log(`Carregando banner ${index}: ${url}`);
+    console.log(`🔄 Carregando banner ${index}: ${url}`);
     
     // Timeout aumentado para 60 segundos
     const timeout = setTimeout(() => {
-        console.log(`Timeout para banner ${index} após 60 segundos`);
+        if (loadingAborted) return;
+        console.log(`⏰ Timeout para banner ${index} após 60 segundos`);
         showError(index, 'Timeout ao carregar banner');
         updateBannerStatus(index, 'error');
         failedBanners++;
@@ -820,13 +855,24 @@ function loadBanner(index, script) {
         updateProgress();
     }, 60000); // 60 segundos
     
+    // Adicionar à lista de timeouts ativos
+    activeTimeouts.push(timeout);
+    
     img.onload = function() {
-        clearTimeout(timeout);
-        console.log(`Banner ${index} carregado com sucesso`);
+        if (loadingAborted) return;
+        
+        // Remover timeout da lista ativa
+        const timeoutIndex = activeTimeouts.indexOf(timeout);
+        if (timeoutIndex > -1) {
+            clearTimeout(timeout);
+            activeTimeouts.splice(timeoutIndex, 1);
+        }
+        
+        console.log(`✅ Banner ${index} carregado com sucesso`);
         
         // Verificar se a imagem realmente carregou
         if (this.naturalWidth === 0 || this.naturalHeight === 0) {
-            console.log(`Banner ${index} carregou mas tem dimensões inválidas`);
+            console.log(`❌ Banner ${index} carregou mas tem dimensões inválidas`);
             showError(index, 'Imagem inválida');
             updateBannerStatus(index, 'error');
             failedBanners++;
@@ -846,8 +892,16 @@ function loadBanner(index, script) {
     };
     
     img.onerror = function() {
-        clearTimeout(timeout);
-        console.log(`Erro ao carregar banner ${index}`);
+        if (loadingAborted) return;
+        
+        // Remover timeout da lista ativa
+        const timeoutIndex = activeTimeouts.indexOf(timeout);
+        if (timeoutIndex > -1) {
+            clearTimeout(timeout);
+            activeTimeouts.splice(timeoutIndex, 1);
+        }
+        
+        console.log(`❌ Erro ao carregar banner ${index}`);
         showError(index, 'Erro ao carregar imagem');
         updateBannerStatus(index, 'error');
         failedBanners++;
@@ -887,20 +941,64 @@ function retryBanner(index) {
     const img = document.getElementById(`banner-img-${index}`);
     const script = img.getAttribute('data-script');
     
-    console.log(`Tentativa ${retryCount[index]} para banner ${index}`);
+    console.log(`🔄 Tentativa ${retryCount[index]} para banner ${index}`);
     
     // Delay progressivo (mais tempo entre tentativas)
     const delay = retryCount[index] * 2000; // 2, 4, 6 segundos
     setTimeout(() => {
+        if (loadingAborted) return;
         // Decrementar loadedBanners para reprocessar
         loadedBanners--;
         loadBanner(index, script);
     }, delay);
 }
 
+// Interceptar navegação e abortar operações
+function setupNavigationInterception() {
+    // Interceptar cliques em links
+    document.addEventListener('click', function(e) {
+        const target = e.target.closest('a');
+        if (target && target.href && !target.target) {
+            console.log('🔗 Navegação detectada, abortando operações...');
+            abortAllOperations();
+        }
+    });
+    
+    // Interceptar mudanças de página via JavaScript
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+    
+    history.pushState = function() {
+        console.log('📍 PushState detectado, abortando operações...');
+        abortAllOperations();
+        return originalPushState.apply(history, arguments);
+    };
+    
+    history.replaceState = function() {
+        console.log('📍 ReplaceState detectado, abortando operações...');
+        abortAllOperations();
+        return originalReplaceState.apply(history, arguments);
+    };
+    
+    // Interceptar evento beforeunload
+    window.addEventListener('beforeunload', function() {
+        console.log('🚪 Página sendo fechada, abortando operações...');
+        abortAllOperations();
+    });
+    
+    // Interceptar evento pagehide
+    window.addEventListener('pagehide', function() {
+        console.log('👋 Página sendo escondida, abortando operações...');
+        abortAllOperations();
+    });
+}
+
 // Carregar banners quando a página estiver pronta
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Iniciando carregamento dos banners...');
+    console.log('🚀 Iniciando carregamento dos banners...');
+    
+    // Configurar interceptação de navegação
+    setupNavigationInterception();
     
     <?php if (!empty($gruposDeJogos)): ?>
         const banners = [
@@ -912,21 +1010,29 @@ document.addEventListener('DOMContentLoaded', function() {
         totalBanners = banners.length;
         loadedBanners = 0;
         failedBanners = 0;
+        loadingAborted = false;
         
         // Mostrar modal de progresso
         showProgressModal();
         
         // Carregar banners com delay escalonado (mais tempo entre cada um)
         banners.forEach((banner, i) => {
-            setTimeout(() => {
-                loadBanner(banner.index, banner.script);
-            }, i * 2000); // 2 segundos entre cada banner
+            const delay = i * 2000; // 2 segundos entre cada banner
+            const timeoutId = setTimeout(() => {
+                if (!loadingAborted) {
+                    loadBanner(banner.index, banner.script);
+                }
+            }, delay);
+            
+            // Adicionar à lista de timeouts ativos
+            activeTimeouts.push(timeoutId);
         });
     <?php endif; ?>
 });
 
 // Expor função globalmente
 window.retryBanner = retryBanner;
+window.abortAllOperations = abortAllOperations;
 </script>
 
 <?php
@@ -1226,34 +1332,6 @@ window.retryBanner = retryBanner;
         background: var(--bg-secondary);
     }
 
-    /* Indicador de carregamento global */
-    .models-loading-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.3);
-        backdrop-filter: blur(4px);
-        z-index: 1000;
-        display: none;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .models-loading-overlay.active {
-        display: flex;
-    }
-
-    .models-loading-content {
-        background: var(--bg-primary);
-        padding: 2rem;
-        border-radius: var(--border-radius);
-        box-shadow: var(--shadow-xl);
-        text-align: center;
-        border: 1px solid var(--border-color);
-    }
-
     /* Animações especiais */
     @keyframes modelCardSlideIn {
         from {
@@ -1307,10 +1385,35 @@ let modelRetryCount = {};
 const maxModelRetries = 2;
 let modelsLoaded = 0;
 let totalModels = 3;
-let loadingAborted = false;
+let modelLoadingAborted = false;
+let activeModelTimeouts = [];
+let activeModelImages = [];
+
+function abortModelLoading() {
+    modelLoadingAborted = true;
+    console.log('🛑 Abortando carregamento de prévias dos modelos...');
+    
+    // Limpar todos os timeouts ativos dos modelos
+    activeModelTimeouts.forEach(timeout => {
+        clearTimeout(timeout);
+    });
+    activeModelTimeouts = [];
+    
+    // Abortar carregamento de todas as imagens ativas dos modelos
+    activeModelImages.forEach(img => {
+        if (img && img.src) {
+            img.onload = null;
+            img.onerror = null;
+            img.src = '';
+        }
+    });
+    activeModelImages = [];
+    
+    console.log('✅ Carregamento de prévias abortado');
+}
 
 function loadModel(modelNumber) {
-    if (loadingAborted) return;
+    if (modelLoadingAborted) return;
     
     const img = document.getElementById(`model-img-${modelNumber}`);
     const loading = document.getElementById(`model-loading-${modelNumber}`);
@@ -1318,6 +1421,9 @@ function loadModel(modelNumber) {
     const status = document.getElementById(`model-status-${modelNumber}`);
     
     if (!img || !loading || !error) return;
+    
+    // Adicionar à lista de imagens ativas
+    activeModelImages.push(img);
     
     // Atualizar status
     status.innerHTML = '<div class="status-loading"><i class="fas fa-spinner fa-spin text-primary-500"></i></div>';
@@ -1333,23 +1439,33 @@ function loadModel(modelNumber) {
     const script = `gerar_fut${modelNumber > 1 ? '_' + modelNumber : ''}.php`;
     const url = `${script}?grupo=0&_preview=1&_t=${timestamp}&_r=${random}`;
     
-    console.log(`Carregando modelo ${modelNumber}: ${url}`);
+    console.log(`🔄 Carregando modelo ${modelNumber}: ${url}`);
     
-    // Timeout reduzido para prévias (20 segundos)
+    // Timeout aumentado para 60 segundos (mesmo que os banners)
     const timeout = setTimeout(() => {
-        if (loadingAborted) return;
-        console.log(`Timeout para modelo ${modelNumber} após 20 segundos`);
+        if (modelLoadingAborted) return;
+        console.log(`⏰ Timeout para modelo ${modelNumber} após 60 segundos`);
         showModelError(modelNumber, 'Timeout ao carregar prévia');
-    }, 20000);
+    }, 60000); // 60 segundos
+    
+    // Adicionar à lista de timeouts ativos
+    activeModelTimeouts.push(timeout);
     
     img.onload = function() {
-        if (loadingAborted) return;
-        clearTimeout(timeout);
-        console.log(`Modelo ${modelNumber} carregado com sucesso`);
+        if (modelLoadingAborted) return;
+        
+        // Remover timeout da lista ativa
+        const timeoutIndex = activeModelTimeouts.indexOf(timeout);
+        if (timeoutIndex > -1) {
+            clearTimeout(timeout);
+            activeModelTimeouts.splice(timeoutIndex, 1);
+        }
+        
+        console.log(`✅ Modelo ${modelNumber} carregado com sucesso`);
         
         // Verificar se a imagem realmente carregou
         if (this.naturalWidth === 0 || this.naturalHeight === 0) {
-            console.log(`Modelo ${modelNumber} carregou mas tem dimensões inválidas`);
+            console.log(`❌ Modelo ${modelNumber} carregou mas tem dimensões inválidas`);
             showModelError(modelNumber, 'Prévia inválida');
         } else {
             // Mostrar imagem
@@ -1367,9 +1483,16 @@ function loadModel(modelNumber) {
     };
     
     img.onerror = function() {
-        if (loadingAborted) return;
-        clearTimeout(timeout);
-        console.log(`Erro ao carregar modelo ${modelNumber}`);
+        if (modelLoadingAborted) return;
+        
+        // Remover timeout da lista ativa
+        const timeoutIndex = activeModelTimeouts.indexOf(timeout);
+        if (timeoutIndex > -1) {
+            clearTimeout(timeout);
+            activeModelTimeouts.splice(timeoutIndex, 1);
+        }
+        
+        console.log(`❌ Erro ao carregar modelo ${modelNumber}`);
         showModelError(modelNumber, 'Erro ao carregar prévia');
     };
     
@@ -1408,19 +1531,20 @@ function retryModel(modelNumber) {
         return;
     }
     
-    console.log(`Tentativa ${modelRetryCount[modelNumber]} para modelo ${modelNumber}`);
+    console.log(`🔄 Tentativa ${modelRetryCount[modelNumber]} para modelo ${modelNumber}`);
     
     // Delay entre tentativas
     setTimeout(() => {
-        modelsLoaded--;
-        loadModel(modelNumber);
+        if (!modelLoadingAborted) {
+            modelsLoaded--;
+            loadModel(modelNumber);
+        }
     }, 1000);
 }
 
 function checkAllModelsLoaded() {
     if (modelsLoaded >= totalModels) {
-        console.log('Todos os modelos processados');
-        // Habilitar navegação livre
+        console.log('✅ Todos os modelos processados');
         enableFreeNavigation();
     }
 }
@@ -1434,24 +1558,72 @@ function enableFreeNavigation() {
     });
 }
 
-function abortLoading() {
-    loadingAborted = true;
-    console.log('Carregamento de prévias abortado pelo usuário');
+// Interceptar navegação na página de seleção de modelos
+function setupModelNavigationInterception() {
+    // Interceptar cliques em links
+    document.addEventListener('click', function(e) {
+        const target = e.target.closest('a');
+        if (target && target.href && !target.target) {
+            console.log('🔗 Navegação detectada na seleção de modelos, abortando prévias...');
+            abortModelLoading();
+        }
+    });
+    
+    // Interceptar mudanças de página via JavaScript
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+    
+    history.pushState = function() {
+        console.log('📍 PushState detectado na seleção, abortando prévias...');
+        abortModelLoading();
+        return originalPushState.apply(history, arguments);
+    };
+    
+    history.replaceState = function() {
+        console.log('📍 ReplaceState detectado na seleção, abortando prévias...');
+        abortModelLoading();
+        return originalReplaceState.apply(history, arguments);
+    };
+    
+    // Interceptar evento beforeunload
+    window.addEventListener('beforeunload', function() {
+        console.log('🚪 Página sendo fechada, abortando prévias...');
+        abortModelLoading();
+    });
+    
+    // Interceptar evento pagehide
+    window.addEventListener('pagehide', function() {
+        console.log('👋 Página sendo escondida, abortando prévias...');
+        abortModelLoading();
+    });
 }
 
 // Carregar modelos quando a página estiver pronta
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Iniciando carregamento das prévias dos modelos...');
+    console.log('🚀 Iniciando carregamento das prévias dos modelos...');
+    
+    // Configurar interceptação de navegação para modelos
+    setupModelNavigationInterception();
     
     <?php if (!empty($jogos)): ?>
         // Habilitar navegação livre imediatamente
         enableFreeNavigation();
         
+        // Reset variáveis
+        modelLoadingAborted = false;
+        modelsLoaded = 0;
+        
         // Carregar modelos com delay mínimo
         for (let i = 1; i <= totalModels; i++) {
-            setTimeout(() => {
-                loadModel(i);
-            }, (i - 1) * 500); // 500ms entre cada modelo
+            const delay = (i - 1) * 500; // 500ms entre cada modelo
+            const timeoutId = setTimeout(() => {
+                if (!modelLoadingAborted) {
+                    loadModel(i);
+                }
+            }, delay);
+            
+            // Adicionar à lista de timeouts ativos
+            activeModelTimeouts.push(timeoutId);
         }
         
         // Permitir que usuário navegue mesmo durante carregamento
@@ -1459,10 +1631,10 @@ document.addEventListener('DOMContentLoaded', function() {
         useButtons.forEach(btn => {
             btn.addEventListener('click', function(e) {
                 // Abortar carregamentos em andamento
-                abortLoading();
+                abortModelLoading();
                 
                 // Permitir navegação imediata
-                console.log('Usuário clicou em usar modelo, abortando carregamentos...');
+                console.log('🎯 Usuário clicou em usar modelo, abortando carregamentos...');
                 
                 // Não prevenir o comportamento padrão - deixar navegar
                 return true;
@@ -1473,7 +1645,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Expor funções globalmente
 window.retryModel = retryModel;
-window.abortLoading = abortLoading;
+window.abortModelLoading = abortModelLoading;
 </script>
 
 <?php
