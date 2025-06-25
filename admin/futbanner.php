@@ -76,7 +76,7 @@ if (isset($_GET['banner'])) {
                                 <div class="loading-spinner"></div>
                                 <span>Carregando...</span>
                             </div>
-                            <img data-src="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>&nocache=<?php echo time(); ?>" 
+                            <img data-src="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>&t=<?php echo time(); ?>" 
                                  alt="Banner Parte <?php echo $index + 1; ?>" 
                                  class="banner-preview-image banner-img lazy-load"
                                  data-index="<?php echo $index; ?>"
@@ -137,7 +137,7 @@ if (isset($_GET['banner'])) {
                                 <div class="loading-spinner"></div>
                                 <span>Carregando...</span>
                             </div>
-                            <img data-src="gerar_fut<?php echo $i > 1 ? '_' . $i : ''; ?>.php?grupo=0&nocache=<?php echo time(); ?>" 
+                            <img data-src="gerar_fut<?php echo $i > 1 ? '_' . $i : ''; ?>.php?grupo=0&t=<?php echo time(); ?>" 
                                  alt="Prévia do Banner <?php echo $i; ?>" 
                                  class="banner-preview-image model-img lazy-load"
                                  data-model="<?php echo $i; ?>"
@@ -160,31 +160,6 @@ if (isset($_GET['banner'])) {
         <?php endfor; ?>
     </div>
 <?php endif; ?>
-
-<!-- Modal de Progresso - POSICIONADO CORRETAMENTE -->
-<div id="loadingModal" class="loading-modal-overlay">
-    <div class="loading-modal-backdrop"></div>
-    <div class="loading-modal-container">
-        <div class="loading-modal-content">
-            <div class="loading-header">
-                <h3 id="modalTitle">Carregando Banners</h3>
-                <p id="modalSubtitle">Por favor, aguarde enquanto os banners são criados...</p>
-            </div>
-            <div class="progress-container">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <div class="progress-text">
-                    <span id="progressText">0%</span>
-                    <span id="progressStatus">Iniciando...</span>
-                </div>
-            </div>
-            <div class="loading-animation">
-                <div class="spinner"></div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <style>
     /* GRID ESPECÍFICO PARA BANNERS - SEMPRE 2 COLUNAS */
@@ -231,148 +206,6 @@ if (isset($_GET['banner'])) {
             grid-template-columns: 1fr !important;
             gap: 1rem;
         }
-    }
-
-    /* MODAL DE LOADING - CORRIGIDO PARA SOBREPOR CORRETAMENTE */
-    .loading-modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 99999;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s ease;
-        pointer-events: none;
-    }
-
-    .loading-modal-overlay.show {
-        opacity: 1;
-        visibility: visible;
-        pointer-events: all;
-    }
-
-    .loading-modal-backdrop {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.8);
-        backdrop-filter: blur(4px);
-    }
-
-    .loading-modal-container {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem;
-    }
-
-    .loading-modal-content {
-        background: var(--bg-primary);
-        border-radius: 16px;
-        padding: 2.5rem;
-        max-width: 450px;
-        width: 100%;
-        text-align: center;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        border: 1px solid var(--border-color);
-        transform: scale(0.9);
-        transition: transform 0.3s ease;
-    }
-
-    .loading-modal-overlay.show .loading-modal-content {
-        transform: scale(1);
-    }
-
-    .loading-header h3 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        margin-bottom: 0.5rem;
-    }
-
-    .loading-header p {
-        color: var(--text-secondary);
-        margin-bottom: 2rem;
-        font-size: 0.95rem;
-    }
-
-    .progress-container {
-        margin-bottom: 2rem;
-    }
-
-    .progress-bar {
-        width: 100%;
-        height: 10px;
-        background: var(--bg-tertiary);
-        border-radius: 5px;
-        overflow: hidden;
-        margin-bottom: 1rem;
-        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
-        width: 0%;
-        transition: width 0.4s ease;
-        border-radius: 5px;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .progress-fill::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-        animation: shimmer 2s infinite;
-    }
-
-    @keyframes shimmer {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
-    }
-
-    .progress-text {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.875rem;
-    }
-
-    #progressText {
-        font-weight: 700;
-        color: var(--primary-500);
-        font-size: 1rem;
-    }
-
-    #progressStatus {
-        color: var(--text-secondary);
-        font-weight: 500;
-    }
-
-    .loading-animation {
-        margin-top: 1.5rem;
-    }
-
-    .spinner {
-        width: 48px;
-        height: 48px;
-        border: 4px solid var(--border-color);
-        border-top: 4px solid var(--primary-500);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: 0 auto;
     }
 
     /* Container dos banners */
@@ -484,10 +317,6 @@ if (isset($_GET['banner'])) {
         color: #f59e0b;
     }
 
-    [data-theme="dark"] .loading-modal-backdrop {
-        background: rgba(0, 0, 0, 0.9);
-    }
-
     /* Hover effects */
     .group:hover {
         transform: translateY(-2px);
@@ -511,15 +340,6 @@ if (isset($_GET['banner'])) {
 
     /* Ajustes específicos para mobile */
     @media (max-width: 480px) {
-        .loading-modal-container {
-            padding: 1rem;
-        }
-        
-        .loading-modal-content {
-            padding: 2rem;
-            margin: 1rem;
-        }
-        
         .card-header,
         .card-body {
             padding: 1rem;
@@ -535,33 +355,10 @@ if (isset($_GET['banner'])) {
 // Variáveis globais para controle
 let totalImages = 0;
 let loadedImages = 0;
-let modal = null;
-let progressFill = null;
-let progressText = null;
-let progressStatus = null;
-let modalTitle = null;
-let modalSubtitle = null;
-let isModalShown = false;
-let loadingTimeout = null;
 let imageRetryCount = {};
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 DOM carregado, inicializando sistema...');
-    
-    // Inicializar elementos do modal
-    modal = document.getElementById('loadingModal');
-    progressFill = document.getElementById('progressFill');
-    progressText = document.getElementById('progressText');
-    progressStatus = document.getElementById('progressStatus');
-    modalTitle = document.getElementById('modalTitle');
-    modalSubtitle = document.getElementById('modalSubtitle');
-    
-    if (!modal) {
-        console.error('❌ Modal não encontrado!');
-        return;
-    }
-    
-    console.log('✅ Modal encontrado e inicializado');
     
     // Verificar qual página estamos
     const bannerImages = document.querySelectorAll('.banner-img');
@@ -575,13 +372,6 @@ document.addEventListener('DOMContentLoaded', function() {
         totalImages = bannerImages.length;
         console.log('📊 Iniciando carregamento de', totalImages, 'banners');
         
-        // Configurar modal para banners
-        if (modalTitle) modalTitle.textContent = 'Gerando Banners';
-        if (modalSubtitle) modalSubtitle.textContent = 'Por favor, aguarde enquanto os banners são criados...';
-        
-        showModal();
-        updateProgress(0, 'Carregando banners...');
-        
         // Configurar lazy loading para banners
         bannerImages.forEach((img, index) => {
             console.log('🔧 Configurando banner', index);
@@ -594,13 +384,6 @@ document.addEventListener('DOMContentLoaded', function() {
         totalImages = modelImages.length;
         console.log('📊 Iniciando carregamento de', totalImages, 'modelos');
         
-        // Configurar modal para modelos
-        if (modalTitle) modalTitle.textContent = 'Carregando Modelos';
-        if (modalSubtitle) modalSubtitle.textContent = 'Por favor, aguarde enquanto os modelos são carregados...';
-        
-        showModal();
-        updateProgress(0, 'Carregando modelos...');
-        
         // Configurar lazy loading para modelos
         modelImages.forEach((img, index) => {
             console.log('🔧 Configurando modelo', index + 1);
@@ -610,14 +393,6 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.log('ℹ️ Nenhuma imagem encontrada para carregar');
     }
-    
-    // Timeout geral para fechar modal se demorar muito
-    loadingTimeout = setTimeout(() => {
-        if (modal && modal.classList.contains('show')) {
-            console.log('⏰ Timeout atingido, fechando modal');
-            hideModal();
-        }
-    }, 20000); // 20 segundos
 });
 
 // Função para carregar imagem com lazy loading
@@ -632,20 +407,28 @@ function loadImageLazy(img, index, type) {
     // Criar nova imagem para pré-carregamento
     const tempImg = new Image();
     
+    // Timeout para cada imagem individual
+    const timeout = setTimeout(() => {
+        console.log('⏰ Timeout para', type, index);
+        handleImageError(img, index, type);
+    }, 15000); // 15 segundos por imagem
+    
     tempImg.onload = function() {
+        clearTimeout(timeout);
         console.log('✅', type, 'carregado:', index);
         img.src = dataSrc;
         handleImageLoad(img, index, type);
     };
     
     tempImg.onerror = function() {
+        clearTimeout(timeout);
         console.log('❌ Erro no', type, ':', index);
         handleImageError(img, index, type);
     };
     
     // Adicionar timestamp único para evitar cache
     const separator = dataSrc.includes('?') ? '&' : '?';
-    const uniqueUrl = dataSrc + separator + 'timestamp=' + Date.now() + '&retry=' + (imageRetryCount[`${type}-${index}`] || 0);
+    const uniqueUrl = dataSrc + separator + 'cache_bust=' + Date.now() + '&retry=' + (imageRetryCount[`${type}-${index}`] || 0);
     
     console.log('🔄 Carregando', type, index, ':', uniqueUrl);
     tempImg.src = uniqueUrl;
@@ -687,58 +470,6 @@ function retryLoadModel(index) {
     }
 }
 
-// Função para mostrar o modal
-function showModal() {
-    if (modal && !isModalShown) {
-        console.log('📱 Mostrando modal...');
-        modal.classList.add('show');
-        isModalShown = true;
-        // Prevenir scroll do body
-        document.body.style.overflow = 'hidden';
-    }
-}
-
-// Função para esconder o modal
-function hideModal() {
-    if (modal && isModalShown) {
-        console.log('📱 Escondendo modal...');
-        if (loadingTimeout) {
-            clearTimeout(loadingTimeout);
-        }
-        setTimeout(() => {
-            modal.classList.remove('show');
-            isModalShown = false;
-            // Restaurar scroll do body
-            document.body.style.overflow = '';
-        }, 500);
-    }
-}
-
-// Função para atualizar o progresso
-function updateProgress(percentage, status) {
-    console.log('📈 Progresso:', percentage + '%', status);
-    if (progressFill) progressFill.style.width = percentage + '%';
-    if (progressText) progressText.textContent = Math.round(percentage) + '%';
-    if (progressStatus) progressStatus.textContent = status;
-}
-
-// Função para calcular progresso
-function calculateProgress() {
-    if (totalImages === 0) return 100;
-    return (loadedImages / totalImages) * 100;
-}
-
-// Função para verificar se todos carregaram
-function checkAllLoaded() {
-    console.log('🔍 Verificando carregamento:', loadedImages, '/', totalImages);
-    if (loadedImages >= totalImages) {
-        updateProgress(100, 'Concluído!');
-        setTimeout(() => {
-            hideModal();
-        }, 1000);
-    }
-}
-
 // Handler unificado para carregamento de imagem
 function handleImageLoad(img, index, type) {
     loadedImages++;
@@ -751,12 +482,6 @@ function handleImageLoad(img, index, type) {
     
     img.style.display = 'block';
     img.style.opacity = '1';
-    
-    const progress = calculateProgress();
-    const itemType = type === 'banner' ? 'banners' : 'modelos';
-    updateProgress(progress, `Carregado ${loadedImages}/${totalImages} ${itemType}`);
-    
-    checkAllLoaded();
 }
 
 // Handler unificado para erro de imagem
@@ -771,38 +496,16 @@ function handleImageError(img, index, type) {
     
     if (loadingElement) loadingElement.style.display = 'none';
     if (errorElement) errorElement.style.display = 'flex';
-    
-    const progress = calculateProgress();
-    const itemType = type === 'banner' ? 'banner' : 'modelo';
-    updateProgress(progress, `Erro no ${itemType} ${loadedImages}/${totalImages}`);
-    
-    checkAllLoaded();
 }
 
-// Permitir fechar modal clicando no backdrop
-if (modal) {
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal || e.target.classList.contains('loading-modal-backdrop')) {
-            hideModal();
-        }
-    });
-}
+// Expor funções globalmente para os botões de retry
+window.retryLoadImage = retryLoadImage;
+window.retryLoadModel = retryLoadModel;
 
 // Debug: Log quando a página termina de carregar
 window.addEventListener('load', function() {
     console.log('🎯 Página totalmente carregada');
 });
-
-// Limpar ao sair da página
-window.addEventListener('beforeunload', function() {
-    if (isModalShown) {
-        document.body.style.overflow = '';
-    }
-});
-
-// Expor funções globalmente para os botões de retry
-window.retryLoadImage = retryLoadImage;
-window.retryLoadModel = retryLoadModel;
 </script>
 
 <?php

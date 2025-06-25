@@ -39,22 +39,28 @@ function carregarImagemDeUrl(string $url, int $maxSize) {
         CURLOPT_RETURNTRANSFER => 1,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_CONNECTTIMEOUT => 5,  // Aumentado de 1 para 5
-        CURLOPT_TIMEOUT => 10,        // Aumentado de 3 para 10
+        CURLOPT_CONNECTTIMEOUT => 2,  // Reduzido para 2 segundos
+        CURLOPT_TIMEOUT => 5,         // Reduzido para 5 segundos
         CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; FutBanner/1.0)',
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_MAXREDIRS => 3,       // Limitar redirecionamentos
+        CURLOPT_FRESH_CONNECT => true, // Forçar nova conexão
+        CURLOPT_FORBID_REUSE => true   // Não reutilizar conexão
     ]);
     
     $imageContent = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch);
     curl_close($ch);
 
-    if ($imageContent === false || $httpCode >= 400) {
+    if ($imageContent === false || $httpCode >= 400 || !empty($error)) {
+        error_log("Erro ao carregar imagem: $url - HTTP: $httpCode - Error: $error");
         return $imageCache[$cacheKey] = false;
     }
     
     $img = @imagecreatefromstring($imageContent);
     if (!$img) {
+        error_log("Erro ao criar imagem de string: $url");
         return $imageCache[$cacheKey] = false;
     }
 
@@ -82,9 +88,12 @@ function carregarLogoCanalComAlturaFixa(string $url, int $alturaFixa = 50) {
         CURLOPT_RETURNTRANSFER => 1,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_CONNECTTIMEOUT => 5,  // Aumentado
-        CURLOPT_TIMEOUT => 10,        // Aumentado
-        CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; FutBanner/1.0)'
+        CURLOPT_CONNECTTIMEOUT => 2,
+        CURLOPT_TIMEOUT => 5,
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; FutBanner/1.0)',
+        CURLOPT_MAXREDIRS => 3,
+        CURLOPT_FRESH_CONNECT => true,
+        CURLOPT_FORBID_REUSE => true
     ]);
     
     $imageContent = curl_exec($ch);
