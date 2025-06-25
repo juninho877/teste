@@ -17,7 +17,8 @@ define('LOGO_OVERRIDES', [
 $GLOBALS['imageCache'] = [];
 
 function logDebug($message) {
-    error_log("[BANNER_DEBUG] " . $message);
+    $timestamp = date('Y-m-d H:i:s');
+    error_log("[BANNER_DEBUG] {$timestamp}: {$message}");
 }
 
 function carregarImagemDeUrl(string $url, int $maxSize) {
@@ -50,8 +51,8 @@ function carregarImagemDeUrl(string $url, int $maxSize) {
         CURLOPT_RETURNTRANSFER => 1,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_CONNECTTIMEOUT => 20,
-        CURLOPT_TIMEOUT => 90,
+        CURLOPT_CONNECTTIMEOUT => 30,
+        CURLOPT_TIMEOUT => 120,
         CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_MAXREDIRS => 10,
@@ -63,8 +64,11 @@ function carregarImagemDeUrl(string $url, int $maxSize) {
             'Accept: image/webp,image/apng,image/*,*/*;q=0.8',
             'Accept-Language: pt-BR,pt;q=0.9,en;q=0.8',
             'Cache-Control: no-cache',
-            'Pragma: no-cache'
+            'Pragma: no-cache',
+            'Connection: close'
         ],
+        CURLOPT_LOW_SPEED_LIMIT => 1024,
+        CURLOPT_LOW_SPEED_TIME => 30,
     ]);
     
     $startTime = microtime(true);
@@ -125,14 +129,17 @@ function carregarLogoCanalComAlturaFixa(string $url, int $alturaFixa = 50) {
         CURLOPT_RETURNTRANSFER => 1,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_CONNECTTIMEOUT => 15,
-        CURLOPT_TIMEOUT => 45,
+        CURLOPT_CONNECTTIMEOUT => 20,
+        CURLOPT_TIMEOUT => 60,
         CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         CURLOPT_MAXREDIRS => 5,
         CURLOPT_ENCODING => '',
         CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
         CURLOPT_FRESH_CONNECT => true,
         CURLOPT_FORBID_REUSE => true,
+        CURLOPT_HTTPHEADER => [
+            'Connection: close'
+        ],
     ]);
     
     $imageContent = curl_exec($ch);
@@ -251,8 +258,9 @@ function getChaveRemota() {
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Content-Length: ' . strlen($postData)]);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $postData); 
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
     
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -374,11 +382,14 @@ function obterJogosDeHoje() {
     $ch = curl_init($json_url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 20);
     curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
     curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Connection: close'
+    ]);
     
     $json_content = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -438,4 +449,13 @@ function formatBytes($bytes, $precision = 2) {
 
 // Verificar recursos no carregamento
 verificarMemoriaERecursos();
+
+// Configurar headers para melhor performance
+if (!headers_sent()) {
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('X-XSS-Protection: 1; mode=block');
+}
+
+logDebug("Banner functions carregadas com sucesso");
 ?>
