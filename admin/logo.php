@@ -1,15 +1,20 @@
 <?php
-// Sua lógica PHP para o 'logo.php' foi mantida integralmente.
 session_start();
 if (!isset($_SESSION["usuario"])) {
     header("Location: login.php");
     exit();
 }
 
+// Incluir classes necessárias
+require_once 'classes/UserImage.php';
+
+$userImage = new UserImage();
+$userId = $_SESSION['user_id'];
+
 $logo_types = [
-    'logo_banner_1' => ['name' => 'Logo Banner 1', 'json_path' => './api/fzstore/logo_banner_1.json', 'fixed_filename' => 'logo_banner_1'],
-    'logo_banner_2' => ['name' => 'Logo Banner 2', 'json_path' => './api/fzstore/logo_banner_2.json', 'fixed_filename' => 'logo_banner_2'],
-    'logo_banner_3' => ['name' => 'Logo Banner 3', 'json_path' => './api/fzstore/logo_banner_3.json', 'fixed_filename' => 'logo_banner_3'],
+    'logo_banner_1' => ['name' => 'Logo Banner 1', 'fixed_filename' => 'logo_banner_1'],
+    'logo_banner_2' => ['name' => 'Logo Banner 2', 'fixed_filename' => 'logo_banner_2'],
+    'logo_banner_3' => ['name' => 'Logo Banner 3', 'fixed_filename' => 'logo_banner_3'],
 ];
 
 $current_logo_key = $_GET['tipo'] ?? array_key_first($logo_types);
@@ -19,7 +24,6 @@ if (!array_key_exists($current_logo_key, $logo_types)) {
 }
 
 $current_logo_config = $logo_types[$current_logo_key];
-$jsonPath = $current_logo_config['json_path'];
 $successMessage = '';
 $errorMessage = '';
 $redirect_logo_key = $current_logo_key;
@@ -28,13 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
     $posted_logo_type = $_POST['logo_type'] ?? null;
     if ($posted_logo_type && isset($logo_types[$posted_logo_type])) {
         $redirect_logo_key = $posted_logo_type;
-        $jsonPath_to_update = $logo_types[$posted_logo_type]['json_path'];
         $fixed_filename_base = $logo_types[$posted_logo_type]['fixed_filename'];
-
-        function update_logo_json($path, $imageName, $uploadType) {
-            $jsonData = json_encode([["ImageName" => $imageName, "Upload_type" => $uploadType]]);
-            return file_put_contents($path, $jsonData) ? "Logo atualizado com sucesso!" : "Erro ao salvar as informações do logo.";
-        }
 
         if (isset($_POST['upload']) && isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
             $file = $_FILES['image'];
@@ -42,46 +40,69 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
             if (in_array($file['type'], $allowedTypes)) {
                 $uploadPath = './fzstore/logo/';
                 if (!is_dir($uploadPath)) mkdir($uploadPath, 0755, true);
+                
                 $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-                $fileName = $fixed_filename_base . '.' . $extension;
+                $fileName = $fixed_filename_base . '_user_' . $userId . '.' . $extension;
                 $destination = $uploadPath . $fileName;
+
                 if (move_uploaded_file($file['tmp_name'], $destination)) {
-                    $successMessage = update_logo_json($jsonPath_to_update, "../fzstore/logo/" . $fileName, "by_file");
-                } else { $errorMessage = 'Falha ao mover o arquivo enviado.'; }
-            } else { $errorMessage = 'Tipo de arquivo inválido.'; }
+                    $imagePath = "fzstore/logo/" . $fileName;
+                    if ($userImage->saveUserImage($userId, $posted_logo_type, $imagePath, 'file')) {
+                        $successMessage = "Logo atualizado com sucesso!";
+                    } else {
+                        $errorMessage = "Erro ao salvar as informações do logo.";
+                    }
+                } else { 
+                    $errorMessage = 'Falha ao mover o arquivo enviado.'; 
+                }
+            } else { 
+                $errorMessage = 'Tipo de arquivo inválido.'; 
+            }
         } elseif (isset($_POST['url-submit'])) {
             $imageUrl = filter_var($_POST['image-url'], FILTER_SANITIZE_URL);
             if (filter_var($imageUrl, FILTER_VALIDATE_URL)) {
-                $successMessage = update_logo_json($jsonPath_to_update, $imageUrl, "by_url");
-            } else { $errorMessage = 'A URL fornecida não é válida.'; }
+                if ($userImage->saveUserImage($userId, $posted_logo_type, $imageUrl, 'url')) {
+                    $successMessage = "Logo atualizado com sucesso!";
+                } else {
+                    $errorMessage = "Erro ao salvar as informações do logo.";
+                }
+            } else { 
+                $errorMessage = 'A URL fornecida não é válida.'; 
+            }
         } elseif (isset($_POST['default-logo'])) {
-            $successMessage = update_logo_json($jsonPath_to_update, "imgelementos/semlogo.png", "default");
+            if ($userImage->saveUserImage($userId, $posted_logo_type, "imgelementos/semlogo.png", 'default')) {
+                $successMessage = "Logo padrão restaurado com sucesso!";
+            } else {
+                $errorMessage = "Erro ao restaurar logo padrão.";
+            }
         }
     } else {
         $errorMessage = "Tipo de logo inválido enviado.";
     }
 }
+
+// Buscar configuração atual do logo
+$currentConfig = $userImage->getUserImageConfig($userId, $current_logo_key);
 $methord = "Não Definido";
 $imageFilex = '';
 $showPreview = false;
-if (file_exists($jsonPath)) {
-    $jsonDatax = json_decode(file_get_contents($jsonPath), true);
-    if (isset($jsonDatax) && is_array($jsonDatax) && !empty($jsonDatax) && isset($jsonDatax[0])) {
-        $filenamex = $jsonDatax[0]['ImageName'] ?? '';
-        $uploadmethord = $jsonDatax[0]['Upload_type'] ?? 'default';
-        if ($uploadmethord == "by_file" && !empty($filenamex)) {
-            $imageFilex = str_replace('../', '/admin/', $filenamex);
-            $methord = "Arquivo Enviado";
-            $showPreview = true;
-        } elseif ($uploadmethord == "by_url" && filter_var($filenamex, FILTER_VALIDATE_URL)) {
-            $imageFilex = $filenamex;
-            $methord = "URL Externa";
-            $showPreview = true;
-        } elseif ($uploadmethord == "default") {
-            $imageFilex = "/admin/imgelementos/semlogo.png";
-            $methord = "Logo Padrão";
-            $showPreview = true;
-        }
+
+if ($currentConfig) {
+    $uploadType = $currentConfig['upload_type'];
+    $imagePath = $currentConfig['image_path'];
+    
+    if ($uploadType == "file" && !empty($imagePath)) {
+        $imageFilex = "/admin/" . $imagePath;
+        $methord = "Arquivo Enviado";
+        $showPreview = true;
+    } elseif ($uploadType == "url" && filter_var($imagePath, FILTER_VALIDATE_URL)) {
+        $imageFilex = $imagePath;
+        $methord = "URL Externa";
+        $showPreview = true;
+    } elseif ($uploadType == "default") {
+        $imageFilex = "/admin/" . $imagePath;
+        $methord = "Logo Padrão";
+        $showPreview = true;
     }
 }
 

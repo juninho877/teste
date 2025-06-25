@@ -19,9 +19,16 @@ require_once 'includes/banner_functions.php';
 function gerarBanner($im, $jogos, $grupoJogos, $padding, $heightPorJogo, $width, $preto, $branco, $fontLiga) {
     static $fundoJogo = null;
     
+    // Obter ID do usuário da sessão
+    $userId = $_SESSION['user_id'];
+    
     if ($fundoJogo === null) {
-        $fundoJogoPath = __DIR__ . '/fzstore/card/card_banner_2.png';
-        $fundoJogo = file_exists($fundoJogoPath) ? imagecreatefrompng($fundoJogoPath) : false;
+        $fundoJogo = loadUserImage($userId, 'card_banner_2');
+        if (!$fundoJogo) {
+            // Fallback para imagem padrão
+            $fundoJogoPath = __DIR__ . '/fzstore/card/card_banner_2.png';
+            $fundoJogo = file_exists($fundoJogoPath) ? imagecreatefrompng($fundoJogoPath) : false;
+        }
     }
     
     $yAtual = $padding + 150;
@@ -110,21 +117,19 @@ function gerarBanner($im, $jogos, $grupoJogos, $padding, $heightPorJogo, $width,
     imagettftext($im, 36, 0, $xTitulo1, 65, $corBranco, $fonteTitulo, $titulo1);
     imagettftext($im, 17, 0, $xData, 90, $corBranco, $fonteData, $dataTexto);
     
-    $logoContent = getImageFromJson('api/fzstore/logo_banner_2.json');
-    if ($logoContent !== false) {
-        $logo = @imagecreatefromstring($logoContent);
-        if ($logo !== false) {
-            $logoLarguraDesejada = 150;
-            $logoPosX = 6; $logoPosY = 10;
-            $logoWidthOriginal = imagesx($logo);
-            $logoHeightOriginal = imagesy($logo);
-            $logoHeight = (int)($logoHeightOriginal * ($logoLarguraDesejada / $logoWidthOriginal));
-            $logoRedimensionada = imagecreatetruecolor($logoLarguraDesejada, $logoHeight);
-            imagealphablending($logoRedimensionada, false); imagesavealpha($logoRedimensionada, true);
-            imagecopyresampled($logoRedimensionada, $logo, 0, 0, 0, 0, $logoLarguraDesejada, $logoHeight, $logoWidthOriginal, $logoHeightOriginal);
-            imagecopy($im, $logoRedimensionada, $logoPosX, $logoPosY, 0, 0, $logoLarguraDesejada, $logoHeight);
-            imagedestroy($logo); imagedestroy($logoRedimensionada);
-        }
+    // Logo do usuário
+    $logoUsuario = loadUserImage($userId, 'logo_banner_2');
+    if ($logoUsuario) {
+        $logoLarguraDesejada = 150;
+        $logoPosX = 6; $logoPosY = 10;
+        $logoWidthOriginal = imagesx($logoUsuario);
+        $logoHeightOriginal = imagesy($logoUsuario);
+        $logoHeight = (int)($logoHeightOriginal * ($logoLarguraDesejada / $logoWidthOriginal));
+        $logoRedimensionada = imagecreatetruecolor($logoLarguraDesejada, $logoHeight);
+        imagealphablending($logoRedimensionada, false); imagesavealpha($logoRedimensionada, true);
+        imagecopyresampled($logoRedimensionada, $logoUsuario, 0, 0, 0, 0, $logoLarguraDesejada, $logoHeight, $logoWidthOriginal, $logoHeightOriginal);
+        imagecopy($im, $logoRedimensionada, $logoPosX, $logoPosY, 0, 0, $logoLarguraDesejada, $logoHeight);
+        imagedestroy($logoUsuario); imagedestroy($logoRedimensionada);
     }
 }
 
@@ -162,8 +167,10 @@ if (isset($_GET['download_all']) && $_GET['download_all'] == 1) {
             $preto = imagecolorallocate($im, 0, 0, 0);
             $branco = imagecolorallocate($im, 255, 255, 255);
             
-            $fundoContent = getImageFromJson('api/fzstore/background_banner_2.json');
-            if ($fundoContent && ($fundo = @imagecreatefromstring($fundoContent))) {
+            // Carregar fundo do usuário
+            $userId = $_SESSION['user_id'];
+            $fundo = loadUserImage($userId, 'background_banner_2');
+            if ($fundo) {
                 imagecopyresampled($im, $fundo, 0, 0, 0, 0, $width, $height, imagesx($fundo), imagesy($fundo));
                 imagedestroy($fundo);
             } else {
@@ -219,14 +226,15 @@ $im = imagecreatetruecolor($width, $height);
 $preto = imagecolorallocate($im, 0, 0, 0);
 $branco = imagecolorallocate($im, 255, 255, 255);
 
-$fundoContent = getImageFromJson('api/fzstore/background_banner_2.json');
-if ($fundoContent !== false) {
-    $fundo = @imagecreatefromstring($fundoContent);
-    if ($fundo !== false) {
-        imagecopyresampled($im, $fundo, 0, 0, 0, 0, $width, $height, imagesx($fundo), imagesy($fundo));
-        imagedestroy($fundo);
-    } else { imagefill($im, 0, 0, $branco); }
-} else { imagefill($im, 0, 0, $branco); }
+// Carregar fundo do usuário
+$userId = $_SESSION['user_id'];
+$fundo = loadUserImage($userId, 'background_banner_2');
+if ($fundo) {
+    imagecopyresampled($im, $fundo, 0, 0, 0, 0, $width, $height, imagesx($fundo), imagesy($fundo));
+    imagedestroy($fundo);
+} else { 
+    imagefill($im, 0, 0, $branco); 
+}
 
 gerarBanner($im, $jogos, $grupoJogos, $padding, $heightPorJogo, $width, $preto, $branco, $fontLiga);
 

@@ -20,9 +20,16 @@ function gerarBanner($im, $jogos, $grupoJogos, $padding, $heightPorJogo, $width,
     static $fundoJogo = null;
     static $logoLiga = null;
     
+    // Obter ID do usuário da sessão
+    $userId = $_SESSION['user_id'];
+    
     if ($fundoJogo === null) {
-        $fundoJogoPath = __DIR__ . '/fzstore/card/card_banner_3.png';
-        $fundoJogo = file_exists($fundoJogoPath) ? imagecreatefrompng($fundoJogoPath) : false;
+        $fundoJogo = loadUserImage($userId, 'card_banner_3');
+        if (!$fundoJogo) {
+            // Fallback para imagem padrão
+            $fundoJogoPath = __DIR__ . '/fzstore/card/card_banner_3.png';
+            $fundoJogo = file_exists($fundoJogoPath) ? imagecreatefrompng($fundoJogoPath) : false;
+        }
     }
     
     $yAtual = $padding + 480;
@@ -139,19 +146,20 @@ function gerarBanner($im, $jogos, $grupoJogos, $padding, $heightPorJogo, $width,
         imagecopy($im, $logoLiga, 0, 1740, 0, 0, imagesx($logoLiga), imagesy($logoLiga));
     }
 
-    $logoContent = getImageFromJson('api/fzstore/logo_banner_3.json');
-    if ($logoContent && ($logoOriginal = @imagecreatefromstring($logoContent))) {
-        $w = imagesx($logoOriginal); $h = imagesy($logoOriginal);
+    // Logo do usuário
+    $logoUsuario = loadUserImage($userId, 'logo_banner_3');
+    if ($logoUsuario) {
+        $w = imagesx($logoUsuario); $h = imagesy($logoUsuario);
         if ($w > 0 && $h > 0) {
             $scale = min(350 / $w, 350 / $h, 1.0);
             $newW = (int)($w * $scale); $newH = (int)($h * $scale);
             $logoRedimensionada = imagecreatetruecolor($newW, $newH);
             imagealphablending($logoRedimensionada, false); imagesavealpha($logoRedimensionada, true);
-            imagecopyresampled($logoRedimensionada, $logoOriginal, 0, 0, 0, 0, $newW, $newH, $w, $h);
+            imagecopyresampled($logoRedimensionada, $logoUsuario, 0, 0, 0, 0, $newW, $newH, $w, $h);
             imagecopy($im, $logoRedimensionada, 10, 5, 0, 0, $newW, $newH);
             imagedestroy($logoRedimensionada);
         }
-        imagedestroy($logoOriginal);
+        imagedestroy($logoUsuario);
     }
 }
 
@@ -190,8 +198,10 @@ if (isset($_GET['download_all']) && $_GET['download_all'] == 1) {
             $preto = imagecolorallocate($im, 0, 0, 0);
             $branco = imagecolorallocate($im, 255, 255, 255);
             
-            $fundoContent = getImageFromJson('api/fzstore/background_banner_3.json');
-            if ($fundoContent && ($fundo = @imagecreatefromstring($fundoContent))) {
+            // Carregar fundo do usuário
+            $userId = $_SESSION['user_id'];
+            $fundo = loadUserImage($userId, 'background_banner_3');
+            if ($fundo) {
                 imagecopyresampled($im, $fundo, 0, 0, 0, 0, $width, $height, imagesx($fundo), imagesy($fundo));
                 imagedestroy($fundo);
             } else {
@@ -247,8 +257,10 @@ if (isset($_GET['download_all']) && $_GET['download_all'] == 1) {
     $preto = imagecolorallocate($im, 0, 0, 0);
     $branco = imagecolorallocate($im, 255, 255, 255);
     
-    $fundoContent = getImageFromJson('api/fzstore/background_banner_3.json');
-    if ($fundoContent && ($fundo = @imagecreatefromstring($fundoContent))) {
+    // Carregar fundo do usuário
+    $userId = $_SESSION['user_id'];
+    $fundo = loadUserImage($userId, 'background_banner_3');
+    if ($fundo) {
         imagecopyresampled($im, $fundo, 0, 0, 0, 0, $width, $height, imagesx($fundo), imagesy($fundo));
         imagedestroy($fundo);
     } else {

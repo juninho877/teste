@@ -5,10 +5,16 @@ if (!isset($_SESSION["usuario"])) {
     exit();
 }
 
+// Incluir classes necessárias
+require_once 'classes/UserImage.php';
+
+$userImage = new UserImage();
+$userId = $_SESSION['user_id'];
+
 $background_types = [
-    'fundo_banner_1' => ['name' => 'Fundo Banner 1', 'json_path' => './api/fzstore/background_banner_1.json', 'fixed_filename' => 'background_banner_1'],
-    'fundo_banner_2' => ['name' => 'Fundo Banner 2', 'json_path' => './api/fzstore/background_banner_2.json', 'fixed_filename' => 'background_banner_2'],
-    'fundo_banner_3' => ['name' => 'Fundo Banner 3', 'json_path' => './api/fzstore/background_banner_3.json', 'fixed_filename' => 'background_banner_3'],
+    'background_banner_1' => ['name' => 'Fundo Banner 1', 'fixed_filename' => 'background_banner_1'],
+    'background_banner_2' => ['name' => 'Fundo Banner 2', 'fixed_filename' => 'background_banner_2'],
+    'background_banner_3' => ['name' => 'Fundo Banner 3', 'fixed_filename' => 'background_banner_3'],
 ];
 
 $current_bg_key = $_GET['tipo'] ?? array_key_first($background_types);
@@ -18,7 +24,6 @@ if (!array_key_exists($current_bg_key, $background_types)) {
 }
 
 $current_bg_config = $background_types[$current_bg_key];
-$jsonPath = $current_bg_config['json_path'];
 $successMessage = '';
 $errorMessage = '';
 $redirect_bg_key = $current_bg_key;
@@ -27,13 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
     $posted_bg_type = $_POST['bg_type'] ?? null;
     if ($posted_bg_type && isset($background_types[$posted_bg_type])) {
         $redirect_bg_key = $posted_bg_type;
-        $jsonPath_to_update = $background_types[$posted_bg_type]['json_path'];
         $fixed_filename_base = $background_types[$posted_bg_type]['fixed_filename'];
-
-        function update_background_json($path, $imageName, $uploadType) {
-            $jsonData = json_encode([["ImageName" => $imageName, "Upload_type" => $uploadType]]);
-            return file_put_contents($path, $jsonData) ? "Plano de fundo atualizado com sucesso!" : "Erro ao salvar as informações da imagem.";
-        }
 
         if (isset($_POST['upload']) && isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
             $file = $_FILES['image'];
@@ -43,41 +42,61 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
                 if (!is_dir($uploadPath)) mkdir($uploadPath, 0755, true);
                 
                 $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-                $fileName = $fixed_filename_base . '.' . $extension;
+                $fileName = $fixed_filename_base . '_user_' . $userId . '.' . $extension;
                 $destination = $uploadPath . $fileName;
 
                 if (move_uploaded_file($file['tmp_name'], $destination)) {
-                    $successMessage = update_background_json($jsonPath_to_update, "../fzstore/Img/" . $fileName, "by_file");
-                } else { $errorMessage = 'Falha ao mover o arquivo enviado.'; }
-            } else { $errorMessage = 'Tipo de arquivo inválido.'; }
+                    $imagePath = "fzstore/Img/" . $fileName;
+                    if ($userImage->saveUserImage($userId, $posted_bg_type, $imagePath, 'file')) {
+                        $successMessage = "Plano de fundo atualizado com sucesso!";
+                    } else {
+                        $errorMessage = "Erro ao salvar as informações da imagem.";
+                    }
+                } else { 
+                    $errorMessage = 'Falha ao mover o arquivo enviado.'; 
+                }
+            } else { 
+                $errorMessage = 'Tipo de arquivo inválido.'; 
+            }
         } elseif (isset($_POST['url-submit'])) {
             $imageUrl = filter_var($_POST['image-url'], FILTER_SANITIZE_URL);
             if (filter_var($imageUrl, FILTER_VALIDATE_URL)) {
-                $successMessage = update_background_json($jsonPath_to_update, $imageUrl, "by_url");
-            } else { $errorMessage = 'A URL fornecida não é válida.'; }
+                if ($userImage->saveUserImage($userId, $posted_bg_type, $imageUrl, 'url')) {
+                    $successMessage = "Plano de fundo atualizado com sucesso!";
+                } else {
+                    $errorMessage = "Erro ao salvar as informações da imagem.";
+                }
+            } else { 
+                $errorMessage = 'A URL fornecida não é válida.'; 
+            }
         }
     } else {
         $errorMessage = "Tipo de plano de fundo inválido enviado.";
     }
 }
 
+// Buscar configuração atual do background
+$currentConfig = $userImage->getUserImageConfig($userId, $current_bg_key);
 $methord = "Não Definido";
 $imageFilex = '';
 $showPreview = false;
-if (file_exists($jsonPath)) {
-    $jsonDatax = json_decode(file_get_contents($jsonPath), true);
-    if (isset($jsonDatax) && is_array($jsonDatax) && !empty($jsonDatax) && isset($jsonDatax[0])) {
-        $filenamex = $jsonDatax[0]['ImageName'] ?? '';
-        $uploadmethord = $jsonDatax[0]['Upload_type'] ?? 'default';
-        if ($uploadmethord == "by_file" && !empty($filenamex)) {
-            $imageFilex = str_replace('../', '/admin/', $filenamex);
-            $methord = "Arquivo Enviado";
-            $showPreview = true;
-        } elseif ($uploadmethord == "by_url" && filter_var($filenamex, FILTER_VALIDATE_URL)) {
-            $imageFilex = $filenamex;
-            $methord = "URL Externa";
-            $showPreview = true;
-        }
+
+if ($currentConfig) {
+    $uploadType = $currentConfig['upload_type'];
+    $imagePath = $currentConfig['image_path'];
+    
+    if ($uploadType == "file" && !empty($imagePath)) {
+        $imageFilex = "/admin/" . $imagePath;
+        $methord = "Arquivo Enviado";
+        $showPreview = true;
+    } elseif ($uploadType == "url" && filter_var($imagePath, FILTER_VALIDATE_URL)) {
+        $imageFilex = $imagePath;
+        $methord = "URL Externa";
+        $showPreview = true;
+    } elseif ($uploadType == "default") {
+        $imageFilex = "/admin/" . $imagePath;
+        $methord = "Fundo Padrão";
+        $showPreview = true;
     }
 }
 
