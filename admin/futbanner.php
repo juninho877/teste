@@ -953,21 +953,50 @@ window.retryBanner = retryBanner;
         </div>
     </div>
 <?php else: ?>
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="models-grid">
         <?php for ($i = 1; $i <= 3; $i++): ?>
-            <div class="card group hover:shadow-xl transition-all duration-300">
-                <div class="card-header">
-                    <h3 class="card-title">Banner Modelo <?php echo $i; ?></h3>
-                    <p class="card-subtitle">Estilo profissional e moderno</p>
-                </div>
-                <div class="card-body">
-                    <div class="banner-preview-container">
-                        <img src="gerar_fut<?php echo $i > 1 ? '_' . $i : ''; ?>.php?grupo=0&_preview=1&_t=<?php echo time(); ?>" 
-                             alt="Prévia do Banner <?php echo $i; ?>" 
-                             class="banner-preview-image"
-                             loading="lazy">
+            <div class="model-card group">
+                <div class="model-card-header">
+                    <div class="model-info">
+                        <h3 class="model-title">Banner Modelo <?php echo $i; ?></h3>
+                        <p class="model-subtitle">Estilo profissional e moderno</p>
                     </div>
-                    <a href="?banner=<?php echo $i; ?>" class="btn btn-primary w-full mt-4 group-hover:bg-primary-600">
+                    <div class="model-status" id="model-status-<?php echo $i; ?>">
+                        <div class="status-loading">
+                            <i class="fas fa-clock text-muted"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="model-preview-container">
+                    <img id="model-img-<?php echo $i; ?>" 
+                         src="" 
+                         alt="Prévia do Banner <?php echo $i; ?>" 
+                         class="model-preview-image"
+                         data-model="<?php echo $i; ?>"
+                         style="display: none;">
+                    
+                    <div id="model-loading-<?php echo $i; ?>" class="loading-placeholder">
+                        <div class="loading-spinner"></div>
+                        <p class="loading-text">Carregando prévia...</p>
+                        <div class="loading-progress">
+                            <div class="loading-bar">
+                                <div class="loading-bar-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="model-error-<?php echo $i; ?>" class="error-placeholder" style="display: none;">
+                        <i class="fas fa-exclamation-triangle text-4xl text-warning-500 mb-3"></i>
+                        <p class="error-text">Erro ao carregar prévia</p>
+                        <button class="btn btn-secondary btn-sm mt-3" onclick="retryModel(<?php echo $i; ?>)">
+                            <i class="fas fa-redo"></i> Tentar Novamente
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="model-actions">
+                    <a href="?banner=<?php echo $i; ?>" class="btn btn-primary w-full model-use-btn" data-model="<?php echo $i; ?>">
                         <i class="fas fa-check"></i>
                         Usar este Modelo
                     </a>
@@ -978,8 +1007,282 @@ window.retryBanner = retryBanner;
 <?php endif; ?>
 
 <style>
-    .group:hover {
+    /* Grid de Modelos - ATÉ 4 POR LINHA */
+    .models-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        max-width: 1800px;
+        margin: 0 auto;
+    }
+
+    /* Responsivo: Até 4 colunas em telas muito grandes */
+    @media (min-width: 1600px) {
+        .models-grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+        }
+    }
+
+    @media (min-width: 1200px) and (max-width: 1599px) {
+        .models-grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 1199px) {
+        .models-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+    }
+
+    /* Card do Modelo */
+    .model-card {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+
+    .model-card:hover {
+        box-shadow: var(--shadow-xl);
+        transform: translateY(-4px);
+        border-color: var(--primary-500);
+    }
+
+    .model-card.loading {
+        pointer-events: none;
+        opacity: 0.8;
+    }
+
+    /* Header do Card do Modelo */
+    .model-card-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bg-secondary);
+    }
+
+    .model-info {
+        flex: 1;
+    }
+
+    .model-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .model-title::before {
+        content: '';
+        width: 10px;
+        height: 10px;
+        background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+        border-radius: 50%;
+        box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+    }
+
+    .model-subtitle {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        margin: 0;
+        font-weight: 500;
+    }
+
+    .model-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Container da Prévia do Modelo - DIMENSÕES AUMENTADAS */
+    .model-preview-container {
+        position: relative;
+        width: 100%;
+        height: 400px; /* Aumentado significativamente */
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    /* Responsivo para prévias */
+    @media (min-width: 1600px) {
+        .model-preview-container {
+            height: 450px; /* Ainda maior em telas muito grandes */
+        }
+    }
+
+    @media (min-width: 1200px) and (max-width: 1599px) {
+        .model-preview-container {
+            height: 420px;
+        }
+    }
+
+    @media (max-width: 1199px) {
+        .model-preview-container {
+            height: 380px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .model-preview-container {
+            height: 320px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .model-preview-container {
+            height: 280px;
+        }
+    }
+
+    .model-preview-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        transition: all 0.3s ease;
+        background: var(--bg-secondary);
+    }
+
+    .model-card:hover .model-preview-image {
+        transform: scale(1.02);
+    }
+
+    /* Ações do Modelo */
+    .model-actions {
+        padding: 1.5rem;
+        background: var(--bg-primary);
+        margin-top: auto;
+    }
+
+    .model-use-btn {
+        font-weight: 700;
+        padding: 1rem 1.5rem;
+        border-radius: var(--border-radius);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.875rem;
+    }
+
+    .model-use-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .model-use-btn:hover::before {
+        left: 100%;
+    }
+
+    .model-use-btn:hover {
         transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        background: var(--primary-600);
+    }
+
+    .model-use-btn:active {
+        transform: translateY(0);
+    }
+
+    /* Estados de Loading para Modelos */
+    .model-card .loading-placeholder,
+    .model-card .error-placeholder {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: var(--text-muted);
+        padding: 2rem;
+        background: var(--bg-secondary);
+    }
+
+    /* Indicador de carregamento global */
+    .models-loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .models-loading-overlay.active {
+        display: flex;
+    }
+
+    .models-loading-content {
+        background: var(--bg-primary);
+        padding: 2rem;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-xl);
+        text-align: center;
+        border: 1px solid var(--border-color);
+    }
+
+    /* Animações especiais */
+    @keyframes modelCardSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .model-card {
+        animation: modelCardSlideIn 0.6s ease-out;
+    }
+
+    .model-card:nth-child(1) { animation-delay: 0.1s; }
+    .model-card:nth-child(2) { animation-delay: 0.2s; }
+    .model-card:nth-child(3) { animation-delay: 0.3s; }
+    .model-card:nth-child(4) { animation-delay: 0.4s; }
+
+    /* Dark theme adjustments */
+    [data-theme="dark"] .text-warning-500 {
+        color: #f59e0b;
+    }
+
+    /* Utilitários específicos para modelos */
+    .group {
+        position: relative;
     }
 
     .transition-all {
@@ -997,37 +1300,180 @@ window.retryBanner = retryBanner;
     .group-hover\:bg-primary-600:hover {
         background-color: var(--primary-600);
     }
-
-    [data-theme="dark"] .text-warning-500 {
-        color: #f59e0b;
-    }
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const images = document.querySelectorAll('.banner-preview-image');
+let modelRetryCount = {};
+const maxModelRetries = 2;
+let modelsLoaded = 0;
+let totalModels = 3;
+let loadingAborted = false;
+
+function loadModel(modelNumber) {
+    if (loadingAborted) return;
     
-    images.forEach(function(img) {
-        // Timeout aumentado para prévias também
-        const timeout = setTimeout(function() {
-            if (!img.complete) {
-                img.style.opacity = '0.5';
-                img.alt = 'Erro ao carregar prévia';
-            }
-        }, 15000); // 15 segundos para prévias
+    const img = document.getElementById(`model-img-${modelNumber}`);
+    const loading = document.getElementById(`model-loading-${modelNumber}`);
+    const error = document.getElementById(`model-error-${modelNumber}`);
+    const status = document.getElementById(`model-status-${modelNumber}`);
+    
+    if (!img || !loading || !error) return;
+    
+    // Atualizar status
+    status.innerHTML = '<div class="status-loading"><i class="fas fa-spinner fa-spin text-primary-500"></i></div>';
+    
+    // Reset estado
+    img.style.display = 'none';
+    loading.style.display = 'flex';
+    error.style.display = 'none';
+    
+    // Criar URL com cache busting
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(7);
+    const script = `gerar_fut${modelNumber > 1 ? '_' + modelNumber : ''}.php`;
+    const url = `${script}?grupo=0&_preview=1&_t=${timestamp}&_r=${random}`;
+    
+    console.log(`Carregando modelo ${modelNumber}: ${url}`);
+    
+    // Timeout reduzido para prévias (20 segundos)
+    const timeout = setTimeout(() => {
+        if (loadingAborted) return;
+        console.log(`Timeout para modelo ${modelNumber} após 20 segundos`);
+        showModelError(modelNumber, 'Timeout ao carregar prévia');
+    }, 20000);
+    
+    img.onload = function() {
+        if (loadingAborted) return;
+        clearTimeout(timeout);
+        console.log(`Modelo ${modelNumber} carregado com sucesso`);
         
-        img.addEventListener('load', function() {
-            clearTimeout(timeout);
-            img.style.opacity = '1';
-        });
+        // Verificar se a imagem realmente carregou
+        if (this.naturalWidth === 0 || this.naturalHeight === 0) {
+            console.log(`Modelo ${modelNumber} carregou mas tem dimensões inválidas`);
+            showModelError(modelNumber, 'Prévia inválida');
+        } else {
+            // Mostrar imagem
+            this.style.display = 'block';
+            loading.style.display = 'none';
+            error.style.display = 'none';
+            status.innerHTML = '<div class="status-success"><i class="fas fa-check-circle text-success-500"></i></div>';
+            
+            // Reset retry count
+            modelRetryCount[modelNumber] = 0;
+        }
         
-        img.addEventListener('error', function() {
-            clearTimeout(timeout);
-            img.style.opacity = '0.5';
-            img.alt = 'Erro ao carregar prévia';
-        });
+        modelsLoaded++;
+        checkAllModelsLoaded();
+    };
+    
+    img.onerror = function() {
+        if (loadingAborted) return;
+        clearTimeout(timeout);
+        console.log(`Erro ao carregar modelo ${modelNumber}`);
+        showModelError(modelNumber, 'Erro ao carregar prévia');
+    };
+    
+    // Iniciar carregamento
+    img.src = url;
+}
+
+function showModelError(modelNumber, message) {
+    const img = document.getElementById(`model-img-${modelNumber}`);
+    const loading = document.getElementById(`model-loading-${modelNumber}`);
+    const error = document.getElementById(`model-error-${modelNumber}`);
+    const status = document.getElementById(`model-status-${modelNumber}`);
+    
+    if (img) img.style.display = 'none';
+    if (loading) loading.style.display = 'none';
+    if (error) {
+        error.style.display = 'flex';
+        const errorText = error.querySelector('.error-text');
+        if (errorText) {
+            errorText.textContent = `${message} (Tentativa ${modelRetryCount[modelNumber] || 0}/${maxModelRetries})`;
+        }
+    }
+    if (status) {
+        status.innerHTML = '<div class="status-error"><i class="fas fa-times-circle text-danger-500"></i></div>';
+    }
+    
+    modelsLoaded++;
+    checkAllModelsLoaded();
+}
+
+function retryModel(modelNumber) {
+    modelRetryCount[modelNumber] = (modelRetryCount[modelNumber] || 0) + 1;
+    
+    if (modelRetryCount[modelNumber] > maxModelRetries) {
+        showModelError(modelNumber, 'Máximo de tentativas excedido');
+        return;
+    }
+    
+    console.log(`Tentativa ${modelRetryCount[modelNumber]} para modelo ${modelNumber}`);
+    
+    // Delay entre tentativas
+    setTimeout(() => {
+        modelsLoaded--;
+        loadModel(modelNumber);
+    }, 1000);
+}
+
+function checkAllModelsLoaded() {
+    if (modelsLoaded >= totalModels) {
+        console.log('Todos os modelos processados');
+        // Habilitar navegação livre
+        enableFreeNavigation();
+    }
+}
+
+function enableFreeNavigation() {
+    // Remove qualquer bloqueio de navegação
+    const useButtons = document.querySelectorAll('.model-use-btn');
+    useButtons.forEach(btn => {
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
     });
+}
+
+function abortLoading() {
+    loadingAborted = true;
+    console.log('Carregamento de prévias abortado pelo usuário');
+}
+
+// Carregar modelos quando a página estiver pronta
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Iniciando carregamento das prévias dos modelos...');
+    
+    <?php if (!empty($jogos)): ?>
+        // Habilitar navegação livre imediatamente
+        enableFreeNavigation();
+        
+        // Carregar modelos com delay mínimo
+        for (let i = 1; i <= totalModels; i++) {
+            setTimeout(() => {
+                loadModel(i);
+            }, (i - 1) * 500); // 500ms entre cada modelo
+        }
+        
+        // Permitir que usuário navegue mesmo durante carregamento
+        const useButtons = document.querySelectorAll('.model-use-btn');
+        useButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                // Abortar carregamentos em andamento
+                abortLoading();
+                
+                // Permitir navegação imediata
+                console.log('Usuário clicou em usar modelo, abortando carregamentos...');
+                
+                // Não prevenir o comportamento padrão - deixar navegar
+                return true;
+            });
+        });
+    <?php endif; ?>
 });
+
+// Expor funções globalmente
+window.retryModel = retryModel;
+window.abortLoading = abortLoading;
 </script>
 
 <?php
