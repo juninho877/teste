@@ -84,20 +84,21 @@ if (isset($_GET['banner'])) {
     </div>
 <?php else: ?>
     <!-- Grid com 2 colunas para banners -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="banners-grid">
         <?php foreach ($gruposDeJogos as $index => $grupo): ?>
-            <div class="card">
+            <div class="card banner-card">
                 <div class="card-header">
                     <h3 class="card-title">Banner Parte <?php echo $index + 1; ?></h3>
                     <p class="card-subtitle"><?php echo count($grupo); ?> jogos neste banner</p>
                 </div>
                 <div class="card-body">
                     <div class="banner-preview-container">
-                        <img src="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>" 
+                        <img src="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>&t=<?php echo time(); ?>" 
                              alt="Banner Parte <?php echo $index + 1; ?>" 
                              class="banner-preview-image"
                              data-index="<?php echo $index; ?>"
-                             style="display: none;">
+                             onload="handleImageLoad(this)"
+                             onerror="handleImageError(this)">
                         <div class="banner-loading" id="loading-<?php echo $index; ?>">
                             <div class="loading-spinner"></div>
                             <span>Carregando...</span>
@@ -140,20 +141,21 @@ if (isset($_GET['banner'])) {
     </div>
 <?php else: ?>
     <!-- Grid com 3 colunas para seleção de modelos -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="models-grid">
         <?php for ($i = 1; $i <= 3; $i++): ?>
-            <div class="card group hover:shadow-xl transition-all duration-300">
+            <div class="card model-card group hover:shadow-xl transition-all duration-300">
                 <div class="card-header">
                     <h3 class="card-title">Banner Modelo <?php echo $i; ?></h3>
                     <p class="card-subtitle">Estilo profissional e moderno</p>
                 </div>
                 <div class="card-body">
                     <div class="banner-preview-container model-preview">
-                        <img src="gerar_fut<?php echo $i > 1 ? '_' . $i : ''; ?>.php?grupo=0" 
+                        <img src="gerar_fut<?php echo $i > 1 ? '_' . $i : ''; ?>.php?grupo=0&t=<?php echo time(); ?>" 
                              alt="Prévia do Banner <?php echo $i; ?>" 
                              class="banner-preview-image model-image"
                              data-model="<?php echo $i; ?>"
-                             style="display: none;">
+                             onload="handleModelLoad(this)"
+                             onerror="handleModelError(this)">
                         <div class="banner-loading" id="model-loading-<?php echo $i; ?>">
                             <div class="loading-spinner"></div>
                             <span>Carregando...</span>
@@ -174,6 +176,38 @@ if (isset($_GET['banner'])) {
 <?php endif; ?>
 
 <style>
+    /* Grids responsivos */
+    .banners-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .models-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    /* Responsividade específica */
+    @media (min-width: 768px) {
+        .banners-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .models-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (max-width: 767px) {
+        .banners-grid,
+        .models-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
     /* Modal de Loading */
     .loading-modal {
         position: fixed;
@@ -293,6 +327,11 @@ if (isset($_GET['banner'])) {
         height: 100%;
         object-fit: cover;
         transition: opacity 0.3s ease;
+        display: none;
+    }
+
+    .banner-preview-image.loaded {
+        display: block;
     }
 
     .banner-loading {
@@ -363,82 +402,22 @@ if (isset($_GET['banner'])) {
 </style>
 
 <script>
+// Variáveis globais para controle
+let totalImages = 0;
+let loadedImages = 0;
+let modal = null;
+let progressFill = null;
+let progressText = null;
+let progressStatus = null;
+
 document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('loadingModal');
-    const progressFill = document.getElementById('progressFill');
-    const progressText = document.getElementById('progressText');
-    const progressStatus = document.getElementById('progressStatus');
+    // Inicializar elementos do modal
+    modal = document.getElementById('loadingModal');
+    progressFill = document.getElementById('progressFill');
+    progressText = document.getElementById('progressText');
+    progressStatus = document.getElementById('progressStatus');
     
-    let totalImages = 0;
-    let loadedImages = 0;
-    let hasError = false;
-
-    // Função para mostrar o modal
-    function showModal() {
-        modal.classList.add('show');
-        updateProgress(0, 'Iniciando...');
-    }
-
-    // Função para esconder o modal
-    function hideModal() {
-        setTimeout(() => {
-            modal.classList.remove('show');
-        }, 500);
-    }
-
-    // Função para atualizar o progresso
-    function updateProgress(percentage, status) {
-        progressFill.style.width = percentage + '%';
-        progressText.textContent = Math.round(percentage) + '%';
-        progressStatus.textContent = status;
-    }
-
-    // Função para calcular progresso
-    function calculateProgress() {
-        if (totalImages === 0) return 0;
-        return (loadedImages / totalImages) * 100;
-    }
-
-    // Função para lidar com carregamento de imagem
-    function handleImageLoad(img, loadingElement, errorElement) {
-        img.onload = function() {
-            loadedImages++;
-            const progress = calculateProgress();
-            
-            // Esconder loading e mostrar imagem
-            loadingElement.style.display = 'none';
-            img.style.display = 'block';
-            
-            updateProgress(progress, `Carregado ${loadedImages}/${totalImages} banners`);
-            
-            // Se todos carregaram, esconder modal
-            if (loadedImages >= totalImages && !hasError) {
-                updateProgress(100, 'Concluído!');
-                hideModal();
-            }
-        };
-
-        img.onerror = function() {
-            hasError = true;
-            loadedImages++;
-            const progress = calculateProgress();
-            
-            // Mostrar erro
-            loadingElement.style.display = 'none';
-            errorElement.style.display = 'flex';
-            
-            updateProgress(progress, `Erro no banner ${loadedImages}/${totalImages}`);
-            
-            // Se todos processados (com ou sem erro), esconder modal
-            if (loadedImages >= totalImages) {
-                setTimeout(() => {
-                    hideModal();
-                }, 1500);
-            }
-        };
-    }
-
-    // Verificar se estamos na página de visualização de banners
+    // Verificar qual página estamos
     const bannerImages = document.querySelectorAll('.banner-preview-image:not(.model-image)');
     const modelImages = document.querySelectorAll('.model-image');
     
@@ -446,48 +425,135 @@ document.addEventListener('DOMContentLoaded', function() {
         // Página de visualização de banners
         totalImages = bannerImages.length;
         showModal();
-        
-        bannerImages.forEach((img, index) => {
-            const loadingElement = document.getElementById(`loading-${index}`);
-            const errorElement = document.getElementById(`error-${index}`);
-            
-            handleImageLoad(img, loadingElement, errorElement);
-            
-            // Timeout para erro
-            setTimeout(() => {
-                if (img.style.display === 'none' && loadingElement.style.display !== 'none') {
-                    img.onerror();
-                }
-            }, 15000);
-        });
+        updateProgress(0, 'Carregando banners...');
     } else if (modelImages.length > 0) {
         // Página de seleção de modelos
         totalImages = modelImages.length;
         showModal();
-        
-        modelImages.forEach((img) => {
-            const modelNumber = img.getAttribute('data-model');
-            const loadingElement = document.getElementById(`model-loading-${modelNumber}`);
-            const errorElement = document.getElementById(`model-error-${modelNumber}`);
-            
-            handleImageLoad(img, loadingElement, errorElement);
-            
-            // Timeout para erro
-            setTimeout(() => {
-                if (img.style.display === 'none' && loadingElement.style.display !== 'none') {
-                    img.onerror();
-                }
-            }, 15000);
-        });
+        updateProgress(0, 'Carregando modelos...');
     }
+    
+    // Timeout geral para fechar modal se demorar muito
+    setTimeout(() => {
+        if (modal && modal.classList.contains('show')) {
+            hideModal();
+        }
+    }, 30000); // 30 segundos
+});
 
-    // Permitir fechar modal clicando fora
+// Função para mostrar o modal
+function showModal() {
+    if (modal) {
+        modal.classList.add('show');
+    }
+}
+
+// Função para esconder o modal
+function hideModal() {
+    if (modal) {
+        setTimeout(() => {
+            modal.classList.remove('show');
+        }, 500);
+    }
+}
+
+// Função para atualizar o progresso
+function updateProgress(percentage, status) {
+    if (progressFill) progressFill.style.width = percentage + '%';
+    if (progressText) progressText.textContent = Math.round(percentage) + '%';
+    if (progressStatus) progressStatus.textContent = status;
+}
+
+// Função para calcular progresso
+function calculateProgress() {
+    if (totalImages === 0) return 100;
+    return (loadedImages / totalImages) * 100;
+}
+
+// Função para verificar se todos carregaram
+function checkAllLoaded() {
+    if (loadedImages >= totalImages) {
+        updateProgress(100, 'Concluído!');
+        setTimeout(() => {
+            hideModal();
+        }, 1000);
+    }
+}
+
+// Handlers para imagens de banner
+function handleImageLoad(img) {
+    loadedImages++;
+    const index = img.getAttribute('data-index');
+    const loadingElement = document.getElementById(`loading-${index}`);
+    
+    // Esconder loading e mostrar imagem
+    if (loadingElement) loadingElement.style.display = 'none';
+    img.style.display = 'block';
+    img.classList.add('loaded');
+    
+    const progress = calculateProgress();
+    updateProgress(progress, `Carregado ${loadedImages}/${totalImages} banners`);
+    
+    checkAllLoaded();
+}
+
+function handleImageError(img) {
+    loadedImages++;
+    const index = img.getAttribute('data-index');
+    const loadingElement = document.getElementById(`loading-${index}`);
+    const errorElement = document.getElementById(`error-${index}`);
+    
+    // Mostrar erro
+    if (loadingElement) loadingElement.style.display = 'none';
+    if (errorElement) errorElement.style.display = 'flex';
+    
+    const progress = calculateProgress();
+    updateProgress(progress, `Erro no banner ${loadedImages}/${totalImages}`);
+    
+    checkAllLoaded();
+}
+
+// Handlers para imagens de modelo
+function handleModelLoad(img) {
+    loadedImages++;
+    const modelNumber = img.getAttribute('data-model');
+    const loadingElement = document.getElementById(`model-loading-${modelNumber}`);
+    
+    // Esconder loading e mostrar imagem
+    if (loadingElement) loadingElement.style.display = 'none';
+    img.style.display = 'block';
+    img.classList.add('loaded');
+    
+    const progress = calculateProgress();
+    updateProgress(progress, `Carregado ${loadedImages}/${totalImages} modelos`);
+    
+    checkAllLoaded();
+}
+
+function handleModelError(img) {
+    loadedImages++;
+    const modelNumber = img.getAttribute('data-model');
+    const loadingElement = document.getElementById(`model-loading-${modelNumber}`);
+    const errorElement = document.getElementById(`model-error-${modelNumber}`);
+    
+    // Mostrar erro
+    if (loadingElement) loadingElement.style.display = 'none';
+    if (errorElement) errorElement.style.display = 'flex';
+    
+    const progress = calculateProgress();
+    updateProgress(progress, `Erro no modelo ${loadedImages}/${totalImages}`);
+    
+    checkAllLoaded();
+}
+
+// Permitir fechar modal clicando fora
+if (modal) {
     modal.addEventListener('click', function(e) {
         if (e.target === modal) {
             hideModal();
         }
     });
-});
+}
 </script>
 
 <?php
