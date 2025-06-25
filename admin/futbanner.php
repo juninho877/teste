@@ -136,48 +136,6 @@ if (isset($_GET['banner'])) {
     </div>
 <?php endif; ?>
 
-<!-- Modal de Progresso para Banners -->
-<div id="bannerProgressModal" class="modal-overlay" style="display: none;">
-    <div class="modal-container">
-        <div class="modal-header">
-            <h3 class="modal-title">
-                <i class="fas fa-magic text-primary-500"></i>
-                Carregando Banners
-            </h3>
-            <p class="modal-subtitle">Aguarde enquanto preparamos seus banners...</p>
-        </div>
-        
-        <div class="modal-body">
-            <div class="progress-info">
-                <div class="progress-text">
-                    <span id="progressText">Iniciando...</span>
-                    <span id="progressPercent">0%</span>
-                </div>
-                <div class="progress-bar">
-                    <div id="progressFill" class="progress-fill"></div>
-                </div>
-            </div>
-            
-            <div class="banners-status">
-                <?php foreach ($gruposDeJogos as $index => $grupo): ?>
-                    <div class="banner-status-item" id="banner-<?php echo $index; ?>">
-                        <div class="status-icon">
-                            <i class="fas fa-clock text-gray-400"></i>
-                        </div>
-                        <div class="status-info">
-                            <span class="status-title">Banner Parte <?php echo $index + 1; ?></span>
-                            <span class="status-subtitle"><?php echo count($grupo); ?> jogos</span>
-                        </div>
-                        <div class="status-indicator">
-                            <span class="status-text">Aguardando</span>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </div>
-</div>
-
 <?php
 } else {
     // Tela de seleção de modelo
@@ -199,7 +157,7 @@ if (isset($_GET['banner'])) {
         </div>
     </div>
 <?php else: ?>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <?php for ($i = 1; $i <= 3; $i++): ?>
             <div class="card group hover:shadow-xl transition-all duration-300">
                 <div class="card-header">
@@ -223,96 +181,90 @@ if (isset($_GET['banner'])) {
     </div>
 <?php endif; ?>
 
-<!-- Modal de Progresso para Modelos -->
-<div id="modelProgressModal" class="modal-overlay" style="display: none;">
+<?php
+} // Fim do if/else principal
+?>
+
+<!-- Modal de Progresso -->
+<div id="progressModal" class="modal-overlay">
     <div class="modal-container">
         <div class="modal-header">
             <h3 class="modal-title">
-                <i class="fas fa-palette text-primary-500"></i>
-                Carregando Prévias dos Modelos
+                <i class="fas fa-magic text-primary-500"></i>
+                <span id="modalTitle">Carregando Prévias</span>
             </h3>
-            <p class="modal-subtitle">Aguarde enquanto preparamos as prévias...</p>
+            <p class="modal-subtitle" id="modalSubtitle">Aguarde enquanto preparamos as prévias...</p>
         </div>
         
         <div class="modal-body">
             <div class="progress-info">
                 <div class="progress-text">
-                    <span id="modelProgressText">Iniciando...</span>
-                    <span id="modelProgressPercent">0%</span>
+                    <span id="progressText">Iniciando...</span>
+                    <span id="progressPercent">0%</span>
                 </div>
                 <div class="progress-bar">
-                    <div id="modelProgressFill" class="progress-fill"></div>
+                    <div id="progressFill" class="progress-fill"></div>
                 </div>
             </div>
             
-            <div class="models-status">
-                <?php for ($i = 1; $i <= 3; $i++): ?>
-                    <div class="model-status-item" id="model-<?php echo $i; ?>">
-                        <div class="status-icon">
-                            <i class="fas fa-clock text-gray-400"></i>
-                        </div>
-                        <div class="status-info">
-                            <span class="status-title">Banner Modelo <?php echo $i; ?></span>
-                            <span class="status-subtitle">Estilo profissional</span>
-                        </div>
-                        <div class="status-indicator">
-                            <span class="status-text">Aguardando</span>
-                        </div>
-                    </div>
-                <?php endfor; ?>
+            <div id="itemsStatus" class="items-status">
+                <!-- Items serão adicionados dinamicamente -->
             </div>
         </div>
         
+        <?php if (!isset($_GET['banner'])): ?>
         <div class="modal-footer">
-            <button id="skipPreviewsBtn" class="btn btn-secondary w-full">
+            <button id="skipBtn" class="btn btn-secondary w-full">
                 <i class="fas fa-forward"></i>
                 Pular Prévias e Escolher Modelo
             </button>
         </div>
+        <?php endif; ?>
     </div>
 </div>
 
 <style>
     /* Modal Overlay - Posicionamento fixo para cobrir toda a tela */
     .modal-overlay {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        background: rgba(0, 0, 0, 0.8) !important;
-        backdrop-filter: blur(4px) !important;
-        z-index: 99999 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(4px);
+        z-index: 999999;
+        display: none;
+        align-items: center;
+        justify-content: center;
         opacity: 0;
         visibility: hidden;
         transition: all 0.3s ease;
     }
 
-    .modal-overlay.active {
-        opacity: 1 !important;
-        visibility: visible !important;
+    .modal-overlay.show {
+        display: flex;
+        opacity: 1;
+        visibility: visible;
     }
 
     /* Modal Container - Centralizado */
     .modal-container {
-        background: var(--bg-primary) !important;
-        border-radius: 16px !important;
-        box-shadow: var(--shadow-xl) !important;
-        border: 1px solid var(--border-color) !important;
-        width: 90% !important;
-        max-width: 600px !important;
-        max-height: 90vh !important;
-        overflow-y: auto !important;
+        background: var(--bg-primary);
+        border-radius: 16px;
+        box-shadow: var(--shadow-xl);
+        border: 1px solid var(--border-color);
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
         transform: scale(0.9) translateY(20px);
         transition: all 0.3s ease;
-        position: relative !important;
+        position: relative;
     }
 
-    .modal-overlay.active .modal-container {
-        transform: scale(1) translateY(0) !important;
+    .modal-overlay.show .modal-container {
+        transform: scale(1) translateY(0);
     }
 
     /* Modal Header */
@@ -374,15 +326,13 @@ if (isset($_GET['banner'])) {
     }
 
     /* Status Items */
-    .banners-status,
-    .models-status {
+    .items-status {
         display: flex;
         flex-direction: column;
         gap: 1rem;
     }
 
-    .banner-status-item,
-    .model-status-item {
+    .status-item {
         display: flex;
         align-items: center;
         gap: 1rem;
@@ -490,8 +440,8 @@ if (isset($_GET['banner'])) {
     /* Responsive */
     @media (max-width: 768px) {
         .modal-container {
-            width: 95% !important;
-            margin: 1rem !important;
+            width: 95%;
+            margin: 1rem;
         }
 
         .modal-header,
@@ -500,8 +450,7 @@ if (isset($_GET['banner'])) {
             padding: 1.5rem;
         }
 
-        .banner-status-item,
-        .model-status-item {
+        .status-item {
             padding: 0.75rem;
         }
     }
@@ -514,7 +463,7 @@ if (isset($_GET['banner'])) {
 
     /* Dark theme adjustments */
     [data-theme="dark"] .modal-overlay {
-        background: rgba(0, 0, 0, 0.9) !important;
+        background: rgba(0, 0, 0, 0.9);
     }
 
     [data-theme="dark"] .text-gray-300 {
@@ -540,17 +489,7 @@ if (isset($_GET['banner'])) {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    <?php if (isset($_GET['banner'])): ?>
-        // Lógica para página de banners
-        initBannerProgress();
-    <?php else: ?>
-        // Lógica para página de seleção de modelos
-        initModelProgress();
-    <?php endif; ?>
-});
-
-function initBannerProgress() {
-    const modal = document.getElementById('bannerProgressModal');
+    const modal = document.getElementById('progressModal');
     const images = document.querySelectorAll('.banner-preview-image');
     
     let loadedCount = 0;
@@ -559,212 +498,173 @@ function initBannerProgress() {
     
     if (totalImages === 0) return;
     
-    // Mostrar modal
-    modal.style.display = 'flex';
-    setTimeout(() => modal.classList.add('active'), 10);
+    // Configurar modal baseado na página
+    <?php if (isset($_GET['banner'])): ?>
+        setupBannerModal();
+    <?php else: ?>
+        setupModelModal();
+    <?php endif; ?>
     
-    // Função para atualizar progresso
+    // Mostrar modal
+    showModal();
+    
+    // Configurar carregamento das imagens
+    images.forEach((img, index) => {
+        const timeout = setTimeout(() => {
+            if (!img.complete && !isSkipped) {
+                updateItemStatus(index, 'error');
+                loadedCount++;
+                updateProgress();
+            }
+        }, 60000); // 60 segundos timeout
+        
+        img.addEventListener('load', function() {
+            clearTimeout(timeout);
+            if (!isSkipped) {
+                updateItemStatus(index, 'success');
+                loadedCount++;
+                updateProgress();
+            }
+        });
+        
+        img.addEventListener('error', function() {
+            clearTimeout(timeout);
+            if (!isSkipped) {
+                updateItemStatus(index, 'error');
+                loadedCount++;
+                updateProgress();
+            }
+        });
+        
+        // Iniciar carregamento
+        updateItemStatus(index, 'loading');
+    });
+    
+    // Botão pular (apenas na página de modelos)
+    const skipBtn = document.getElementById('skipBtn');
+    if (skipBtn) {
+        skipBtn.addEventListener('click', function() {
+            skipLoading();
+        });
+    }
+    
+    // Permitir navegação livre
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('a[href]') && !e.target.closest('#progressModal')) {
+            skipLoading();
+        }
+    });
+    
+    // Fechar modal clicando no overlay
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            skipLoading();
+        }
+    });
+    
+    function showModal() {
+        modal.classList.add('show');
+    }
+    
+    function hideModal() {
+        modal.classList.remove('show');
+    }
+    
+    function skipLoading() {
+        isSkipped = true;
+        hideModal();
+    }
+    
+    function setupBannerModal() {
+        document.getElementById('modalTitle').textContent = 'Carregando Banners';
+        document.getElementById('modalSubtitle').textContent = 'Aguarde enquanto preparamos seus banners...';
+        
+        const statusContainer = document.getElementById('itemsStatus');
+        statusContainer.innerHTML = '';
+        
+        <?php foreach ($gruposDeJogos as $index => $grupo): ?>
+            const item<?php echo $index; ?> = createStatusItem(
+                <?php echo $index; ?>,
+                'Banner Parte <?php echo $index + 1; ?>',
+                '<?php echo count($grupo); ?> jogos'
+            );
+            statusContainer.appendChild(item<?php echo $index; ?>);
+        <?php endforeach; ?>
+    }
+    
+    function setupModelModal() {
+        document.getElementById('modalTitle').textContent = 'Carregando Prévias dos Modelos';
+        document.getElementById('modalSubtitle').textContent = 'Aguarde enquanto preparamos as prévias...';
+        
+        const statusContainer = document.getElementById('itemsStatus');
+        statusContainer.innerHTML = '';
+        
+        <?php for ($i = 1; $i <= 3; $i++): ?>
+            const model<?php echo $i; ?> = createStatusItem(
+                <?php echo $i - 1; ?>,
+                'Banner Modelo <?php echo $i; ?>',
+                'Estilo profissional'
+            );
+            statusContainer.appendChild(model<?php echo $i; ?>);
+        <?php endfor; ?>
+    }
+    
+    function createStatusItem(index, title, subtitle) {
+        const item = document.createElement('div');
+        item.className = 'status-item';
+        item.id = `status-item-${index}`;
+        item.innerHTML = `
+            <div class="status-icon">
+                <i class="fas fa-clock text-gray-400"></i>
+            </div>
+            <div class="status-info">
+                <span class="status-title">${title}</span>
+                <span class="status-subtitle">${subtitle}</span>
+            </div>
+            <div class="status-indicator">
+                <span class="status-text">Aguardando</span>
+            </div>
+        `;
+        return item;
+    }
+    
     function updateProgress() {
         const percent = Math.round((loadedCount / totalImages) * 100);
-        document.getElementById('progressText').textContent = `Carregando banner ${loadedCount + 1} de ${totalImages}`;
+        document.getElementById('progressText').textContent = `Carregando ${loadedCount + 1} de ${totalImages}`;
         document.getElementById('progressPercent').textContent = `${percent}%`;
         document.getElementById('progressFill').style.width = `${percent}%`;
         
         if (loadedCount >= totalImages) {
             setTimeout(() => {
-                modal.classList.remove('active');
-                setTimeout(() => modal.style.display = 'none', 300);
+                hideModal();
             }, 1000);
         }
     }
     
-    // Configurar carregamento das imagens
-    images.forEach((img, index) => {
-        const timeout = setTimeout(() => {
-            if (!img.complete && !isSkipped) {
-                updateBannerStatus(index, 'error');
-                loadedCount++;
-                updateProgress();
-            }
-        }, 60000); // 60 segundos timeout
+    function updateItemStatus(index, status) {
+        const statusItem = document.getElementById(`status-item-${index}`);
+        if (!statusItem) return;
         
-        img.addEventListener('load', function() {
-            clearTimeout(timeout);
-            if (!isSkipped) {
-                updateBannerStatus(index, 'success');
-                loadedCount++;
-                updateProgress();
-            }
-        });
+        statusItem.className = `status-item status-${status}`;
+        const icon = statusItem.querySelector('.status-icon i');
+        const text = statusItem.querySelector('.status-text');
         
-        img.addEventListener('error', function() {
-            clearTimeout(timeout);
-            if (!isSkipped) {
-                updateBannerStatus(index, 'error');
-                loadedCount++;
-                updateProgress();
-            }
-        });
-        
-        // Iniciar carregamento
-        updateBannerStatus(index, 'loading');
-    });
-    
-    // Permitir navegação livre - clique em qualquer lugar para fechar
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('a[href]') && !e.target.closest('#bannerProgressModal')) {
-            isSkipped = true;
-            modal.classList.remove('active');
-            setTimeout(() => modal.style.display = 'none', 300);
-        }
-    });
-    
-    // Fechar modal clicando no overlay
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            isSkipped = true;
-            modal.classList.remove('active');
-            setTimeout(() => modal.style.display = 'none', 300);
-        }
-    });
-}
-
-function initModelProgress() {
-    const modal = document.getElementById('modelProgressModal');
-    const skipBtn = document.getElementById('skipPreviewsBtn');
-    const images = document.querySelectorAll('.banner-preview-image');
-    
-    let loadedCount = 0;
-    let totalImages = images.length;
-    let isSkipped = false;
-    
-    if (totalImages === 0) return;
-    
-    // Mostrar modal
-    modal.style.display = 'flex';
-    setTimeout(() => modal.classList.add('active'), 10);
-    
-    // Função para atualizar progresso
-    function updateProgress() {
-        const percent = Math.round((loadedCount / totalImages) * 100);
-        document.getElementById('modelProgressText').textContent = `Carregando modelo ${loadedCount + 1} de ${totalImages}`;
-        document.getElementById('modelProgressPercent').textContent = `${percent}%`;
-        document.getElementById('modelProgressFill').style.width = `${percent}%`;
-        
-        if (loadedCount >= totalImages) {
-            setTimeout(() => {
-                modal.classList.remove('active');
-                setTimeout(() => modal.style.display = 'none', 300);
-            }, 1000);
+        switch (status) {
+            case 'loading':
+                icon.className = 'fas fa-spinner';
+                text.textContent = 'Carregando...';
+                break;
+            case 'success':
+                icon.className = 'fas fa-check-circle';
+                text.textContent = 'Concluído';
+                break;
+            case 'error':
+                icon.className = 'fas fa-times-circle';
+                text.textContent = 'Erro';
+                break;
         }
     }
-    
-    // Configurar carregamento das imagens
-    images.forEach((img, index) => {
-        const modelNumber = index + 1;
-        const timeout = setTimeout(() => {
-            if (!img.complete && !isSkipped) {
-                updateModelStatus(modelNumber, 'error');
-                loadedCount++;
-                updateProgress();
-            }
-        }, 60000); // 60 segundos timeout
-        
-        img.addEventListener('load', function() {
-            clearTimeout(timeout);
-            if (!isSkipped) {
-                updateModelStatus(modelNumber, 'success');
-                loadedCount++;
-                updateProgress();
-            }
-        });
-        
-        img.addEventListener('error', function() {
-            clearTimeout(timeout);
-            if (!isSkipped) {
-                updateModelStatus(modelNumber, 'error');
-                loadedCount++;
-                updateProgress();
-            }
-        });
-        
-        // Iniciar carregamento
-        updateModelStatus(modelNumber, 'loading');
-    });
-    
-    // Botão pular
-    skipBtn.addEventListener('click', function() {
-        isSkipped = true;
-        modal.classList.remove('active');
-        setTimeout(() => modal.style.display = 'none', 300);
-    });
-    
-    // Permitir navegação livre
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('a[href]') && !e.target.closest('#modelProgressModal')) {
-            isSkipped = true;
-            modal.classList.remove('active');
-            setTimeout(() => modal.style.display = 'none', 300);
-        }
-    });
-    
-    // Fechar modal clicando no overlay
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            isSkipped = true;
-            modal.classList.remove('active');
-            setTimeout(() => modal.style.display = 'none', 300);
-        }
-    });
-}
-
-function updateBannerStatus(index, status) {
-    const statusItem = document.getElementById(`banner-${index}`);
-    if (!statusItem) return;
-    
-    statusItem.className = `banner-status-item status-${status}`;
-    const icon = statusItem.querySelector('.status-icon i');
-    const text = statusItem.querySelector('.status-text');
-    
-    switch (status) {
-        case 'loading':
-            icon.className = 'fas fa-spinner';
-            text.textContent = 'Carregando...';
-            break;
-        case 'success':
-            icon.className = 'fas fa-check-circle';
-            text.textContent = 'Concluído';
-            break;
-        case 'error':
-            icon.className = 'fas fa-times-circle';
-            text.textContent = 'Erro';
-            break;
-    }
-}
-
-function updateModelStatus(modelNumber, status) {
-    const statusItem = document.getElementById(`model-${modelNumber}`);
-    if (!statusItem) return;
-    
-    statusItem.className = `model-status-item status-${status}`;
-    const icon = statusItem.querySelector('.status-icon i');
-    const text = statusItem.querySelector('.status-text');
-    
-    switch (status) {
-        case 'loading':
-            icon.className = 'fas fa-spinner';
-            text.textContent = 'Carregando...';
-            break;
-        case 'success':
-            icon.className = 'fas fa-check-circle';
-            text.textContent = 'Concluído';
-            break;
-        case 'error':
-            icon.className = 'fas fa-times-circle';
-            text.textContent = 'Erro';
-            break;
-    }
-}
+});
 
 // Permitir navegação livre - sem travamentos
 window.addEventListener('beforeunload', function() {
@@ -772,8 +672,4 @@ window.addEventListener('beforeunload', function() {
 });
 </script>
 
-<?php
-} // Fim do if/else principal
-
-include "includes/footer.php";
-?>
+<?php include "includes/footer.php"; ?>
