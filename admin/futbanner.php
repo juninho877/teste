@@ -82,48 +82,6 @@ if (isset($_GET['banner'])) {
     }
 ?>
 
-<!-- Modal de Progresso para Banners -->
-<div id="bannerProgressModal" class="modal-overlay">
-    <div class="modal-container">
-        <div class="modal-header">
-            <h3 class="modal-title">
-                <i class="fas fa-magic text-primary-500"></i>
-                Carregando Banners
-            </h3>
-            <p class="modal-subtitle">Aguarde enquanto preparamos seus banners...</p>
-        </div>
-        
-        <div class="modal-body">
-            <div class="progress-info">
-                <div class="progress-text">
-                    <span id="progressText">Iniciando...</span>
-                    <span id="progressPercent">0%</span>
-                </div>
-                <div class="progress-bar">
-                    <div id="progressFill" class="progress-fill"></div>
-                </div>
-            </div>
-            
-            <div class="banners-status">
-                <?php foreach ($gruposDeJogos as $index => $grupo): ?>
-                    <div class="banner-status-item" id="banner-<?php echo $index; ?>">
-                        <div class="status-icon">
-                            <i class="fas fa-clock text-gray-400"></i>
-                        </div>
-                        <div class="status-info">
-                            <span class="status-title">Banner Parte <?php echo $index + 1; ?></span>
-                            <span class="status-subtitle"><?php echo count($grupo); ?> jogos</span>
-                        </div>
-                        <div class="status-indicator">
-                            <span class="status-text">Aguardando</span>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="page-header">
     <h1 class="page-title">Banners de Jogos de Hoje</h1>
     <p class="page-subtitle">Modelo <?php echo $tipo_banner; ?> - <?php echo count($jogos); ?> jogos disponíveis</p>
@@ -178,13 +136,95 @@ if (isset($_GET['banner'])) {
     </div>
 <?php endif; ?>
 
+<!-- Modal de Progresso para Banners -->
+<div id="bannerProgressModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="fas fa-magic text-primary-500"></i>
+                Carregando Banners
+            </h3>
+            <p class="modal-subtitle">Aguarde enquanto preparamos seus banners...</p>
+        </div>
+        
+        <div class="modal-body">
+            <div class="progress-info">
+                <div class="progress-text">
+                    <span id="progressText">Iniciando...</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+            </div>
+            
+            <div class="banners-status">
+                <?php foreach ($gruposDeJogos as $index => $grupo): ?>
+                    <div class="banner-status-item" id="banner-<?php echo $index; ?>">
+                        <div class="status-icon">
+                            <i class="fas fa-clock text-gray-400"></i>
+                        </div>
+                        <div class="status-info">
+                            <span class="status-title">Banner Parte <?php echo $index + 1; ?></span>
+                            <span class="status-subtitle"><?php echo count($grupo); ?> jogos</span>
+                        </div>
+                        <div class="status-indicator">
+                            <span class="status-text">Aguardando</span>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?php
 } else {
     // Tela de seleção de modelo
 ?>
 
+<div class="page-header">
+    <h1 class="page-title">Escolha o Modelo de Banner</h1>
+    <p class="page-subtitle">Selecione o estilo que melhor se adequa às suas necessidades</p>
+</div>
+
+<?php if (empty($jogos)): ?>
+    <div class="card">
+        <div class="card-body text-center py-12">
+            <div class="mb-4">
+                <i class="fas fa-exclamation-triangle text-6xl text-warning-500"></i>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Nenhum jogo disponível</h3>
+            <p class="text-muted">Não há jogos programados para hoje para gerar as prévias dos banners.</p>
+        </div>
+    </div>
+<?php else: ?>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <?php for ($i = 1; $i <= 3; $i++): ?>
+            <div class="card group hover:shadow-xl transition-all duration-300">
+                <div class="card-header">
+                    <h3 class="card-title">Banner Modelo <?php echo $i; ?></h3>
+                    <p class="card-subtitle">Estilo profissional e moderno</p>
+                </div>
+                <div class="card-body">
+                    <div class="banner-preview-container">
+                        <img src="gerar_fut<?php echo $i > 1 ? '_' . $i : ''; ?>.php?grupo=0" 
+                             alt="Prévia do Banner <?php echo $i; ?>" 
+                             class="banner-preview-image"
+                             loading="lazy">
+                    </div>
+                    <a href="?banner=<?php echo $i; ?>" class="btn btn-primary w-full mt-4 group-hover:bg-primary-600">
+                        <i class="fas fa-check"></i>
+                        Usar este Modelo
+                    </a>
+                </div>
+            </div>
+        <?php endfor; ?>
+    </div>
+<?php endif; ?>
+
 <!-- Modal de Progresso para Modelos -->
-<div id="modelProgressModal" class="modal-overlay">
+<div id="modelProgressModal" class="modal-overlay" style="display: none;">
     <div class="modal-container">
         <div class="modal-header">
             <h3 class="modal-title">
@@ -232,86 +272,47 @@ if (isset($_GET['banner'])) {
     </div>
 </div>
 
-<div class="page-header">
-    <h1 class="page-title">Escolha o Modelo de Banner</h1>
-    <p class="page-subtitle">Selecione o estilo que melhor se adequa às suas necessidades</p>
-</div>
-
-<?php if (empty($jogos)): ?>
-    <div class="card">
-        <div class="card-body text-center py-12">
-            <div class="mb-4">
-                <i class="fas fa-exclamation-triangle text-6xl text-warning-500"></i>
-            </div>
-            <h3 class="text-xl font-semibold mb-2">Nenhum jogo disponível</h3>
-            <p class="text-muted">Não há jogos programados para hoje para gerar as prévias dos banners.</p>
-        </div>
-    </div>
-<?php else: ?>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <?php for ($i = 1; $i <= 3; $i++): ?>
-            <div class="card group hover:shadow-xl transition-all duration-300">
-                <div class="card-header">
-                    <h3 class="card-title">Banner Modelo <?php echo $i; ?></h3>
-                    <p class="card-subtitle">Estilo profissional e moderno</p>
-                </div>
-                <div class="card-body">
-                    <div class="banner-preview-container">
-                        <img src="gerar_fut<?php echo $i > 1 ? '_' . $i : ''; ?>.php?grupo=0" 
-                             alt="Prévia do Banner <?php echo $i; ?>" 
-                             class="banner-preview-image"
-                             loading="lazy">
-                    </div>
-                    <a href="?banner=<?php echo $i; ?>" class="btn btn-primary w-full mt-4 group-hover:bg-primary-600">
-                        <i class="fas fa-check"></i>
-                        Usar este Modelo
-                    </a>
-                </div>
-            </div>
-        <?php endfor; ?>
-    </div>
-<?php endif; ?>
-
 <style>
     /* Modal Overlay - Posicionamento fixo para cobrir toda a tela */
     .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(4px);
-        z-index: 9999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: rgba(0, 0, 0, 0.8) !important;
+        backdrop-filter: blur(4px) !important;
+        z-index: 99999 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
         opacity: 0;
         visibility: hidden;
         transition: all 0.3s ease;
     }
 
     .modal-overlay.active {
-        opacity: 1;
-        visibility: visible;
+        opacity: 1 !important;
+        visibility: visible !important;
     }
 
     /* Modal Container - Centralizado */
     .modal-container {
-        background: var(--bg-primary);
-        border-radius: 16px;
-        box-shadow: var(--shadow-xl);
-        border: 1px solid var(--border-color);
-        width: 90%;
-        max-width: 600px;
-        max-height: 90vh;
-        overflow-y: auto;
+        background: var(--bg-primary) !important;
+        border-radius: 16px !important;
+        box-shadow: var(--shadow-xl) !important;
+        border: 1px solid var(--border-color) !important;
+        width: 90% !important;
+        max-width: 600px !important;
+        max-height: 90vh !important;
+        overflow-y: auto !important;
         transform: scale(0.9) translateY(20px);
         transition: all 0.3s ease;
+        position: relative !important;
     }
 
     .modal-overlay.active .modal-container {
-        transform: scale(1) translateY(0);
+        transform: scale(1) translateY(0) !important;
     }
 
     /* Modal Header */
@@ -489,8 +490,8 @@ if (isset($_GET['banner'])) {
     /* Responsive */
     @media (max-width: 768px) {
         .modal-container {
-            width: 95%;
-            margin: 1rem;
+            width: 95% !important;
+            margin: 1rem !important;
         }
 
         .modal-header,
@@ -513,7 +514,7 @@ if (isset($_GET['banner'])) {
 
     /* Dark theme adjustments */
     [data-theme="dark"] .modal-overlay {
-        background: rgba(0, 0, 0, 0.8);
+        background: rgba(0, 0, 0, 0.9) !important;
     }
 
     [data-theme="dark"] .text-gray-300 {
@@ -559,7 +560,8 @@ function initBannerProgress() {
     if (totalImages === 0) return;
     
     // Mostrar modal
-    modal.classList.add('active');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('active'), 10);
     
     // Função para atualizar progresso
     function updateProgress() {
@@ -571,13 +573,13 @@ function initBannerProgress() {
         if (loadedCount >= totalImages) {
             setTimeout(() => {
                 modal.classList.remove('active');
+                setTimeout(() => modal.style.display = 'none', 300);
             }, 1000);
         }
     }
     
     // Configurar carregamento das imagens
     images.forEach((img, index) => {
-        const statusItem = document.getElementById(`banner-${index}`);
         const timeout = setTimeout(() => {
             if (!img.complete && !isSkipped) {
                 updateBannerStatus(index, 'error');
@@ -613,6 +615,7 @@ function initBannerProgress() {
         if (e.target.closest('a[href]') && !e.target.closest('#bannerProgressModal')) {
             isSkipped = true;
             modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
         }
     });
     
@@ -621,6 +624,7 @@ function initBannerProgress() {
         if (e.target === modal) {
             isSkipped = true;
             modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
         }
     });
 }
@@ -637,7 +641,8 @@ function initModelProgress() {
     if (totalImages === 0) return;
     
     // Mostrar modal
-    modal.classList.add('active');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('active'), 10);
     
     // Função para atualizar progresso
     function updateProgress() {
@@ -649,6 +654,7 @@ function initModelProgress() {
         if (loadedCount >= totalImages) {
             setTimeout(() => {
                 modal.classList.remove('active');
+                setTimeout(() => modal.style.display = 'none', 300);
             }, 1000);
         }
     }
@@ -690,6 +696,7 @@ function initModelProgress() {
     skipBtn.addEventListener('click', function() {
         isSkipped = true;
         modal.classList.remove('active');
+        setTimeout(() => modal.style.display = 'none', 300);
     });
     
     // Permitir navegação livre
@@ -697,6 +704,7 @@ function initModelProgress() {
         if (e.target.closest('a[href]') && !e.target.closest('#modelProgressModal')) {
             isSkipped = true;
             modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
         }
     });
     
@@ -705,6 +713,7 @@ function initModelProgress() {
         if (e.target === modal) {
             isSkipped = true;
             modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
         }
     });
 }
