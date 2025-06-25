@@ -465,7 +465,7 @@ document.addEventListener('DOMContentLoaded', function() {
         totalImages = modelImages.length;
         showModal();
         
-        modelImages.forEach((img, index) => {
+        modelImages.forEach((img) => {
             const modelNumber = img.getAttribute('data-model');
             const loadingElement = document.getElementById(`model-loading-${modelNumber}`);
             const errorElement = document.getElementById(`model-error-${modelNumber}`);
