@@ -143,11 +143,11 @@ try {
                             <p class="text-sm text-muted mb-4 line-clamp-3"><?php echo htmlspecialchars(substr($overview, 0, 120)) . '...'; ?></p>
                         <?php endif; ?>
                         
-                        <form method="GET" action="gerar_banner.php" onsubmit="showLoading(event, this)" class="mt-auto">
+                        <form method="GET" class="mt-auto">
                             <input type="hidden" name="name" value="<?php echo htmlspecialchars($title, ENT_QUOTES); ?>">
                             <input type="hidden" name="type" value="<?php echo $type === 'serie' ? 'serie' : 'filme'; ?>">
                             <input type="hidden" name="year" value="<?php echo htmlspecialchars($year, ENT_QUOTES); ?>">
-                            <button type="submit" class="btn btn-primary w-full">
+                            <button type="button" class="btn btn-primary w-full" onclick="openThemeSelectionModal(event, this.form)">
                                 <i class="fas fa-magic"></i>
                                 Gerar Banner
                             </button>
@@ -400,6 +400,264 @@ try {
     .gap-4 {
         gap: 1rem;
     }
+
+    /* Estilos para o modal de seleção de tema */
+    .theme-selection-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(8px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .theme-selection-modal.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .theme-modal-content {
+        background: var(--bg-primary);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-xl);
+        border: 1px solid var(--border-color);
+        width: 95%;
+        max-width: 900px;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: modalSlideIn 0.3s ease-out;
+    }
+
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-50px) scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .theme-modal-header {
+        padding: 2rem 2rem 1rem;
+        text-align: center;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .theme-modal-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+    }
+
+    .theme-modal-title i {
+        color: var(--primary-500);
+    }
+
+    .theme-modal-subtitle {
+        color: var(--text-secondary);
+        font-size: 1rem;
+    }
+
+    .theme-modal-body {
+        padding: 2rem;
+    }
+
+    .theme-options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .theme-option {
+        background: var(--bg-secondary);
+        border: 2px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .theme-option:hover {
+        border-color: var(--primary-500);
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .theme-option.selected {
+        border-color: var(--primary-500);
+        background: var(--primary-50);
+        box-shadow: var(--shadow-md);
+    }
+
+    [data-theme="dark"] .theme-option.selected {
+        background: rgba(59, 130, 246, 0.1);
+    }
+
+    .theme-preview {
+        width: 100%;
+        height: 150px;
+        background: var(--bg-tertiary);
+        border-radius: var(--border-radius-sm);
+        margin-bottom: 1rem;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .theme-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .theme-option:hover .theme-preview img {
+        transform: scale(1.05);
+    }
+
+    .theme-preview-placeholder {
+        color: var(--text-muted);
+        font-size: 2rem;
+    }
+
+    .theme-name {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .theme-description {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+    }
+
+    .theme-select-btn {
+        width: 100%;
+        padding: 0.75rem 1.5rem;
+        background: var(--primary-500);
+        color: white;
+        border: none;
+        border-radius: var(--border-radius-sm);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .theme-select-btn:hover {
+        background: var(--primary-600);
+        transform: translateY(-1px);
+    }
+
+    .theme-modal-footer {
+        padding: 1.5rem 2rem;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        justify-content: center;
+    }
+
+    .close-modal-btn {
+        padding: 0.75rem 2rem;
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-sm);
+        cursor: pointer;
+        transition: var(--transition);
+        font-weight: 500;
+    }
+
+    .close-modal-btn:hover {
+        background: var(--bg-secondary);
+    }
+
+    /* Loading overlay para o modal */
+    .theme-loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .theme-loading-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .theme-loading-spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-top: 4px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1rem;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Responsivo */
+    @media (max-width: 768px) {
+        .theme-modal-content {
+            width: 98%;
+            margin: 1rem;
+        }
+
+        .theme-modal-header,
+        .theme-modal-body,
+        .theme-modal-footer {
+            padding: 1.5rem 1rem;
+        }
+
+        .theme-options-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .theme-modal-title {
+            font-size: 1.5rem;
+        }
+    }
     
     /* Dark theme adjustments */
     [data-theme="dark"] .bg-gray-200 {
@@ -417,12 +675,190 @@ try {
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    function showLoading(event, form) {
+    // Função para abrir o modal de seleção de tema
+    function openThemeSelectionModal(event, form) {
+        event.preventDefault();
+        
+        // Extrair dados do formulário
+        const formData = new FormData(form);
+        const movieData = {
+            name: formData.get('name'),
+            type: formData.get('type'),
+            year: formData.get('year')
+        };
+        
+        // Criar o modal usando SweetAlert2
+        Swal.fire({
+            title: '',
+            html: `
+                <div class="theme-modal-header">
+                    <h2 class="theme-modal-title">
+                        <i class="fas fa-palette"></i>
+                        Escolha o Tema do Banner
+                    </h2>
+                    <p class="theme-modal-subtitle">Selecione o estilo que melhor se adequa ao seu projeto</p>
+                </div>
+                
+                <div class="theme-modal-body">
+                    <div class="theme-options-grid">
+                        <!-- Tema 1 -->
+                        <div class="theme-option" data-theme="1" onclick="selectTheme(1)">
+                            <div class="theme-preview">
+                                <img src="https://i.ibb.co/MJCWzXj/8966-media-3.png" alt="Tema 1" loading="lazy">
+                            </div>
+                            <h3 class="theme-name">Tema Clássico</h3>
+                            <p class="theme-description">Design elegante e profissional com layout vertical</p>
+                            <button class="theme-select-btn" onclick="generateBanner(1, '${encodeURIComponent(JSON.stringify(movieData))}')">
+                                <i class="fas fa-check"></i>
+                                Selecionar Tema
+                            </button>
+                        </div>
+                        
+                        <!-- Tema 2 -->
+                        <div class="theme-option" data-theme="2" onclick="selectTheme(2)">
+                            <div class="theme-preview">
+                                <img src="https://i.ibb.co/6R7F9Y09/8966-media-2.png" alt="Tema 2" loading="lazy">
+                            </div>
+                            <h3 class="theme-name">Tema Moderno</h3>
+                            <p class="theme-description">Layout horizontal com elementos dinâmicos</p>
+                            <button class="theme-select-btn" onclick="generateBanner(2, '${encodeURIComponent(JSON.stringify(movieData))}')">
+                                <i class="fas fa-check"></i>
+                                Selecionar Tema
+                            </button>
+                        </div>
+                        
+                        <!-- Tema 3 -->
+                        <div class="theme-option" data-theme="3" onclick="selectTheme(3)">
+                            <div class="theme-preview">
+                                <img src="https://i.ibb.co/x8PCQM3r/8966-media-1.png" alt="Tema 3" loading="lazy">
+                            </div>
+                            <h3 class="theme-name">Tema Premium</h3>
+                            <p class="theme-description">Design sofisticado com cantos arredondados</p>
+                            <button class="theme-select-btn" onclick="generateBanner(3, '${encodeURIComponent(JSON.stringify(movieData))}')">
+                                <i class="fas fa-check"></i>
+                                Selecionar Tema
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Loading overlay -->
+                    <div class="theme-loading-overlay" id="themeLoadingOverlay">
+                        <div class="theme-loading-spinner"></div>
+                        <p>Gerando seu banner personalizado...</p>
+                        <p style="font-size: 0.875rem; opacity: 0.8; margin-top: 0.5rem;">Isso pode levar alguns segundos</p>
+                    </div>
+                </div>
+            `,
+            showConfirmButton: false,
+            showCancelButton: true,
+            cancelButtonText: 'Cancelar',
+            width: '900px',
+            customClass: {
+                popup: 'theme-selection-popup',
+                htmlContainer: 'theme-selection-container'
+            },
+            background: document.body.getAttribute('data-theme') === 'dark' ? '#1e293b' : '#ffffff',
+            color: document.body.getAttribute('data-theme') === 'dark' ? '#f1f5f9' : '#1e293b',
+            didOpen: () => {
+                // Adicionar estilos CSS ao modal
+                const style = document.createElement('style');
+                style.textContent = `
+                    .theme-selection-popup {
+                        padding: 0 !important;
+                    }
+                    .theme-selection-container {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        });
+    }
+    
+    // Função para selecionar um tema (visual feedback)
+    function selectTheme(themeNumber) {
+        // Remover seleção anterior
+        document.querySelectorAll('.theme-option').forEach(option => {
+            option.classList.remove('selected');
+        });
+        
+        // Adicionar seleção ao tema clicado
+        const selectedOption = document.querySelector(`[data-theme="${themeNumber}"]`);
+        if (selectedOption) {
+            selectedOption.classList.add('selected');
+        }
+    }
+    
+    // Função para gerar o banner com o tema selecionado
+    function generateBanner(themeNumber, encodedMovieData) {
+        // Mostrar loading overlay
+        const loadingOverlay = document.getElementById('themeLoadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('active');
+        }
+        
+        // Decodificar dados do filme
+        const movieData = JSON.parse(decodeURIComponent(encodedMovieData));
+        
+        // Determinar o arquivo de geração baseado no tema
+        let generatorFile;
+        switch (themeNumber) {
+            case 1:
+                generatorFile = 'gerar_banner3.php'; // Tema Premium (com cantos arredondados)
+                break;
+            case 2:
+                generatorFile = 'gerar_banner2.php'; // Tema Moderno (horizontal)
+                break;
+            case 3:
+                generatorFile = 'gerar_banner.php';  // Tema Clássico (vertical)
+                break;
+            default:
+                generatorFile = 'gerar_banner.php';
+        }
+        
+        // Construir URL com parâmetros
+        const params = new URLSearchParams({
+            name: movieData.name,
+            type: movieData.type,
+            year: movieData.year || ''
+        });
+        
+        const url = `${generatorFile}?${params.toString()}`;
+        
+        // Simular um pequeno delay para mostrar o loading
+        setTimeout(() => {
+            // Fechar o modal
+            Swal.close();
+            
+            // Mostrar modal de carregamento final
+            Swal.fire({
+                title: 'Gerando Banner',
+                text: `Criando seu banner com o Tema ${themeNumber}...`,
+                icon: 'info',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                background: document.body.getAttribute('data-theme') === 'dark' ? '#1e293b' : '#ffffff',
+                color: document.body.getAttribute('data-theme') === 'dark' ? '#f1f5f9' : '#1e293b',
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Redirecionar após um breve delay
+            setTimeout(() => {
+                window.location.href = url;
+            }, 1500);
+        }, 800);
+    }
+
+    // Função original renomeada para evitar conflitos
+    function showSearchLoading(event, form) {
         event.preventDefault();
         
         Swal.fire({
-            title: 'Gerando Banner',
-            text: 'Por favor, aguarde enquanto criamos seu banner personalizado...',
+            title: 'Buscando Conteúdo',
+            text: 'Por favor, aguarde enquanto buscamos os resultados...',
             icon: 'info',
             allowOutsideClick: false,
             showConfirmButton: false,
