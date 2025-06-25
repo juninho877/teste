@@ -343,11 +343,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <?php echo $erro; ?>
                     </div>
                 <?php endif; ?>
-
-                <div class="db-info">
-                    <i class="fas fa-info-circle"></i>
-                    Sistema migrado para MySQL. Configure o banco em config/database.php
-                </div>
             </form>
         </div>
     </div>
