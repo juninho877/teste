@@ -84,35 +84,37 @@ if (isset($_GET['banner'])) {
     </div>
 <?php else: ?>
     <!-- Grid com 2 colunas para banners -->
-    <div class="banners-grid">
+    <div class="banners-container">
         <?php foreach ($gruposDeJogos as $index => $grupo): ?>
-            <div class="card banner-card">
-                <div class="card-header">
-                    <h3 class="card-title">Banner Parte <?php echo $index + 1; ?></h3>
-                    <p class="card-subtitle"><?php echo count($grupo); ?> jogos neste banner</p>
-                </div>
-                <div class="card-body">
-                    <div class="banner-preview-container">
-                        <img src="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>&t=<?php echo time(); ?>" 
-                             alt="Banner Parte <?php echo $index + 1; ?>" 
-                             class="banner-preview-image"
-                             data-index="<?php echo $index; ?>"
-                             onload="handleImageLoad(this)"
-                             onerror="handleImageError(this)">
-                        <div class="banner-loading" id="loading-<?php echo $index; ?>">
-                            <div class="loading-spinner"></div>
-                            <span>Carregando...</span>
-                        </div>
-                        <div class="banner-error" id="error-<?php echo $index; ?>" style="display: none;">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <span>Erro ao carregar</span>
-                        </div>
+            <div class="banner-item">
+                <div class="card banner-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Banner Parte <?php echo $index + 1; ?></h3>
+                        <p class="card-subtitle"><?php echo count($grupo); ?> jogos neste banner</p>
                     </div>
-                    <a href="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>&download=1" 
-                       class="btn btn-primary w-full mt-4" target="_blank">
-                        <i class="fas fa-download"></i>
-                        Baixar Banner
-                    </a>
+                    <div class="card-body">
+                        <div class="banner-preview-container">
+                            <img src="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>&t=<?php echo time(); ?>" 
+                                 alt="Banner Parte <?php echo $index + 1; ?>" 
+                                 class="banner-preview-image"
+                                 data-index="<?php echo $index; ?>"
+                                 onload="handleImageLoad(this)"
+                                 onerror="handleImageError(this)">
+                            <div class="banner-loading" id="loading-<?php echo $index; ?>">
+                                <div class="loading-spinner"></div>
+                                <span>Carregando...</span>
+                            </div>
+                            <div class="banner-error" id="error-<?php echo $index; ?>" style="display: none;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Erro ao carregar</span>
+                            </div>
+                        </div>
+                        <a href="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>&download=1" 
+                           class="btn btn-primary w-full mt-4" target="_blank">
+                            <i class="fas fa-download"></i>
+                            Baixar Banner
+                        </a>
+                    </div>
                 </div>
             </div>
         <?php endforeach; ?>
@@ -141,34 +143,36 @@ if (isset($_GET['banner'])) {
     </div>
 <?php else: ?>
     <!-- Grid com 3 colunas para seleção de modelos -->
-    <div class="models-grid">
+    <div class="models-container">
         <?php for ($i = 1; $i <= 3; $i++): ?>
-            <div class="card model-card group hover:shadow-xl transition-all duration-300">
-                <div class="card-header">
-                    <h3 class="card-title">Banner Modelo <?php echo $i; ?></h3>
-                    <p class="card-subtitle">Estilo profissional e moderno</p>
-                </div>
-                <div class="card-body">
-                    <div class="banner-preview-container model-preview">
-                        <img src="gerar_fut<?php echo $i > 1 ? '_' . $i : ''; ?>.php?grupo=0&t=<?php echo time(); ?>" 
-                             alt="Prévia do Banner <?php echo $i; ?>" 
-                             class="banner-preview-image model-image"
-                             data-model="<?php echo $i; ?>"
-                             onload="handleModelLoad(this)"
-                             onerror="handleModelError(this)">
-                        <div class="banner-loading" id="model-loading-<?php echo $i; ?>">
-                            <div class="loading-spinner"></div>
-                            <span>Carregando...</span>
-                        </div>
-                        <div class="banner-error" id="model-error-<?php echo $i; ?>" style="display: none;">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <span>Erro ao carregar</span>
-                        </div>
+            <div class="model-item">
+                <div class="card model-card group hover:shadow-xl transition-all duration-300">
+                    <div class="card-header">
+                        <h3 class="card-title">Banner Modelo <?php echo $i; ?></h3>
+                        <p class="card-subtitle">Estilo profissional e moderno</p>
                     </div>
-                    <a href="?banner=<?php echo $i; ?>" class="btn btn-primary w-full mt-4 group-hover:bg-primary-600">
-                        <i class="fas fa-check"></i>
-                        Usar este Modelo
-                    </a>
+                    <div class="card-body">
+                        <div class="banner-preview-container model-preview">
+                            <img src="gerar_fut<?php echo $i > 1 ? '_' . $i : ''; ?>.php?grupo=0&t=<?php echo time(); ?>" 
+                                 alt="Prévia do Banner <?php echo $i; ?>" 
+                                 class="banner-preview-image model-image"
+                                 data-model="<?php echo $i; ?>"
+                                 onload="handleModelLoad(this)"
+                                 onerror="handleModelError(this)">
+                            <div class="banner-loading" id="model-loading-<?php echo $i; ?>">
+                                <div class="loading-spinner"></div>
+                                <span>Carregando...</span>
+                            </div>
+                            <div class="banner-error" id="model-error-<?php echo $i; ?>" style="display: none;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Erro ao carregar</span>
+                            </div>
+                        </div>
+                        <a href="?banner=<?php echo $i; ?>" class="btn btn-primary w-full mt-4 group-hover:bg-primary-600">
+                            <i class="fas fa-check"></i>
+                            Usar este Modelo
+                        </a>
+                    </div>
                 </div>
             </div>
         <?php endfor; ?>
@@ -176,36 +180,47 @@ if (isset($_GET['banner'])) {
 <?php endif; ?>
 
 <style>
-    /* Grids responsivos */
-    .banners-grid {
+    /* Container para banners - 2 colunas */
+    .banners-container {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    /* Container para modelos - 3 colunas */
+    .models-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
         gap: 1.5rem;
         margin-bottom: 2rem;
     }
 
-    .models-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    /* Responsividade específica */
-    @media (min-width: 768px) {
-        .banners-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-        .models-grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
-
-    @media (max-width: 767px) {
-        .banners-grid,
-        .models-grid {
+    /* Responsividade para tablets */
+    @media (max-width: 1024px) {
+        .banners-container {
             grid-template-columns: 1fr;
+            gap: 1.5rem;
         }
+        .models-container {
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+    }
+
+    /* Responsividade para mobile */
+    @media (max-width: 768px) {
+        .banners-container,
+        .models-container {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+    }
+
+    /* Items dos grids */
+    .banner-item,
+    .model-item {
+        width: 100%;
     }
 
     /* Modal de Loading */
@@ -398,6 +413,27 @@ if (isset($_GET['banner'])) {
 
     [data-theme="dark"] .text-warning-500 {
         color: #f59e0b;
+    }
+
+    /* Hover effects */
+    .group:hover {
+        transform: translateY(-2px);
+    }
+
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+
+    .duration-300 {
+        transition-duration: 300ms;
+    }
+
+    .hover\:shadow-xl:hover {
+        box-shadow: var(--shadow-xl);
+    }
+
+    .group-hover\:bg-primary-600:hover {
+        background-color: var(--primary-600);
     }
 </style>
 
