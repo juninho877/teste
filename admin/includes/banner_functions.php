@@ -39,8 +39,8 @@ function carregarImagemDeUrl(string $url, int $maxSize) {
         CURLOPT_RETURNTRANSFER => 1,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_CONNECTTIMEOUT => 1,
-        CURLOPT_TIMEOUT => 3,
+        CURLOPT_CONNECTTIMEOUT => 5,  // Aumentado de 1 para 5
+        CURLOPT_TIMEOUT => 10,        // Aumentado de 3 para 10
         CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; FutBanner/1.0)',
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1
     ]);
@@ -82,8 +82,8 @@ function carregarLogoCanalComAlturaFixa(string $url, int $alturaFixa = 50) {
         CURLOPT_RETURNTRANSFER => 1,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_CONNECTTIMEOUT => 1,
-        CURLOPT_TIMEOUT => 3,
+        CURLOPT_CONNECTTIMEOUT => 5,  // Aumentado
+        CURLOPT_TIMEOUT => 10,        // Aumentado
         CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; FutBanner/1.0)'
     ]);
     
