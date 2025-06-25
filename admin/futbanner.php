@@ -8,7 +8,7 @@ if (!isset($_SESSION["usuario"])) {
 $pageTitle = isset($_GET['banner']) ? "Gerador de Banner" : "Selecionar Modelo de Banner";
 include "includes/header.php";
 
-// Funções de criptografia e busca de dados (mantidas do código original)
+// Funções de criptografia e busca de dados (otimizadas)
 function getChaveRemota() {
     $url_base64 = 'aHR0cHM6Ly9hcGlmdXQucHJvamVjdHguY2xpY2svQXV0b0FwaS9BRVMvY29uZmlna2V5LnBocA==';
     $auth_base64 = 'dmFxdW9UQlpFb0U4QmhHMg==';
@@ -23,8 +23,8 @@ function getChaveRemota() {
         CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Content-Length: ' . strlen($postData)],
         CURLOPT_POSTFIELDS => $postData,
         CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_TIMEOUT => 5,
-        CURLOPT_CONNECTTIMEOUT => 3
+        CURLOPT_TIMEOUT => 3, // Reduzido
+        CURLOPT_CONNECTTIMEOUT => 2 // Reduzido
     ]);
     $response = curl_exec($ch);
     curl_close($ch);
@@ -46,8 +46,8 @@ if ($json_url) {
     $ch = curl_init($json_url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 3); // Reduzido
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2); // Reduzido
     $json_content = curl_exec($ch);
     curl_close($ch);
 
@@ -345,60 +345,89 @@ if (isset($_GET['banner'])) {
 document.addEventListener('DOMContentLoaded', () => {
     let currentRequests = [];
     let isNavigating = false;
+    let abortController = null;
 
-    // Lazy loading das imagens
+    // Lazy loading otimizado das imagens
     const lazyImages = document.querySelectorAll('.lazy-load');
     const imageObserver = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
-            if (entry.isIntersecting) {
+            if (entry.isIntersecting && !isNavigating) {
                 const img = entry.target;
                 const placeholder = img.previousElementSibling;
                 
-                // Timeout para evitar travamento
+                // Criar AbortController para esta requisição
+                abortController = new AbortController();
+                
+                // Timeout mais agressivo
                 const timeout = setTimeout(() => {
                     if (img.style.opacity === '0') {
-                        placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Timeout ao carregar</span>';
+                        placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Timeout</span>';
+                        if (abortController) abortController.abort();
                     }
-                }, 8000);
+                }, 5000); // Reduzido para 5 segundos
 
                 img.onload = () => {
                     clearTimeout(timeout);
-                    img.style.opacity = '1';
-                    if (placeholder) {
-                        placeholder.style.display = 'none';
+                    if (!isNavigating) {
+                        img.style.opacity = '1';
+                        if (placeholder) placeholder.style.display = 'none';
                     }
                 };
 
                 img.onerror = () => {
                     clearTimeout(timeout);
                     if (placeholder) {
-                        placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Erro ao carregar</span>';
+                        placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Erro</span>';
                     }
                 };
 
-                img.src = img.dataset.src;
+                // Usar fetch com AbortController para melhor controle
+                fetch(img.dataset.src, { 
+                    signal: abortController.signal,
+                    method: 'GET',
+                    cache: 'force-cache'
+                }).then(response => {
+                    if (response.ok && !isNavigating) {
+                        img.src = img.dataset.src;
+                    }
+                }).catch(error => {
+                    if (error.name !== 'AbortError' && placeholder) {
+                        placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Erro de rede</span>';
+                    }
+                });
+
                 observer.unobserve(img);
             }
         });
+    }, {
+        rootMargin: '50px' // Carrega quando está 50px da viewport
     });
 
     lazyImages.forEach(img => imageObserver.observe(img));
 
-    // Permitir navegação mesmo durante carregamento
-    window.addEventListener('beforeunload', (e) => {
-        if (currentRequests.length > 0 && !isNavigating) {
-            currentRequests.forEach(request => {
-                if (request.abort) request.abort();
-            });
-        }
-    });
+    // Interceptar navegação para cancelar operações
+    function handleNavigation() {
+        isNavigating = true;
+        cancelAllRequests();
+        hideLoading();
+    }
 
-    // Interceptar cliques em links para cancelar operações
+    // Interceptar cliques em links
     document.addEventListener('click', (e) => {
         const link = e.target.closest('a[href]');
         if (link && !link.href.includes('#') && !link.target) {
-            isNavigating = true;
-            cancelAllRequests();
+            handleNavigation();
+        }
+    });
+
+    // Interceptar mudanças de página
+    window.addEventListener('beforeunload', handleNavigation);
+    window.addEventListener('pagehide', handleNavigation);
+
+    // Permitir navegação via teclas
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            handleNavigation();
         }
     });
 });
@@ -406,39 +435,35 @@ document.addEventListener('DOMContentLoaded', () => {
 function downloadSingleBanner(script, index) {
     showLoading();
     
+    // Usar window.open para evitar travamento
     const downloadUrl = `${script}?grupo=${index}&download=1`;
-    
-    // Criar link temporário para download
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = `banner_parte_${index + 1}.png`;
+    link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
-    // Esconder loading após um tempo
-    setTimeout(() => {
-        hideLoading();
-    }, 2000);
+    // Esconder loading rapidamente
+    setTimeout(hideLoading, 1500);
 }
 
 function downloadAllBanners(script) {
     showLoading();
     
+    // Usar window.open para evitar travamento
     const downloadUrl = `${script}?download_all=1`;
-    
-    // Criar link temporário para download
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = `banners_completos.zip`;
+    link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
-    // Esconder loading após um tempo
-    setTimeout(() => {
-        hideLoading();
-    }, 3000);
+    // Esconder loading após tempo razoável
+    setTimeout(hideLoading, 2500);
 }
 
 function showLoading() {
@@ -461,7 +486,12 @@ function cancelOperation() {
 }
 
 function cancelAllRequests() {
-    // Cancelar todas as requisições ativas
+    // Cancelar AbortController se existir
+    if (window.abortController) {
+        window.abortController.abort();
+    }
+    
+    // Cancelar outras requisições ativas
     if (window.currentRequests) {
         window.currentRequests.forEach(request => {
             if (request.abort) request.abort();
@@ -470,29 +500,37 @@ function cancelAllRequests() {
     }
 }
 
-// Otimização: Preload apenas das imagens visíveis
-function preloadVisibleImages() {
-    const visibleImages = document.querySelectorAll('.banner-preview-image[data-src]');
+// Otimização: Preload inteligente apenas das imagens próximas
+function preloadNearbyImages() {
+    const images = document.querySelectorAll('.banner-preview-image[data-src]:not([src])');
     const viewportHeight = window.innerHeight;
     
-    visibleImages.forEach(img => {
-        const rect = img.getBoundingClientRect();
-        if (rect.top < viewportHeight + 200) { // 200px de margem
-            if (img.dataset.src && !img.src) {
-                img.src = img.dataset.src;
+    images.forEach((img, index) => {
+        // Preload apenas as primeiras 2 imagens
+        if (index < 2) {
+            const rect = img.getBoundingClientRect();
+            if (rect.top < viewportHeight + 100) { // 100px de margem
+                if (img.dataset.src && !img.src) {
+                    img.src = img.dataset.src;
+                }
             }
         }
     });
 }
 
-// Executar preload após um pequeno delay
-setTimeout(preloadVisibleImages, 500);
+// Executar preload após delay mínimo
+setTimeout(preloadNearbyImages, 200);
 
-// Preload ao fazer scroll
+// Preload otimizado no scroll
 let scrollTimeout;
 window.addEventListener('scroll', () => {
     clearTimeout(scrollTimeout);
-    scrollTimeout = setTimeout(preloadVisibleImages, 100);
+    scrollTimeout = setTimeout(preloadNearbyImages, 150);
+}, { passive: true });
+
+// Cleanup ao sair da página
+window.addEventListener('unload', () => {
+    cancelAllRequests();
 });
 </script>
 
