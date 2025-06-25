@@ -74,16 +74,18 @@ if (isset($_GET['banner'])) {
                         <div class="banner-preview-container">
                             <div class="banner-loading-overlay" id="loading-<?php echo $index; ?>">
                                 <div class="loading-spinner"></div>
-                                <span>Carregando...</span>
+                                <span>Carregando banner...</span>
                             </div>
-                            <img data-src="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>&t=<?php echo time(); ?>" 
+                            <img src="<?php echo $geradorScript; ?>?grupo=<?php echo $index; ?>&cache_bust=<?php echo time(); ?>" 
                                  alt="Banner Parte <?php echo $index + 1; ?>" 
-                                 class="banner-preview-image banner-img lazy-load"
+                                 class="banner-preview-image banner-img"
                                  data-index="<?php echo $index; ?>"
-                                 style="display: none;">
+                                 style="display: none;"
+                                 onload="handleImageLoad(this, <?php echo $index; ?>)"
+                                 onerror="handleImageError(this, <?php echo $index; ?>)">
                             <div class="banner-error-overlay" id="error-<?php echo $index; ?>" style="display: none;">
                                 <i class="fas fa-exclamation-triangle"></i>
-                                <span>Erro ao carregar</span>
+                                <span>Erro ao carregar banner</span>
                                 <button class="retry-btn" onclick="retryLoadImage(<?php echo $index; ?>)">
                                     <i class="fas fa-redo"></i> Tentar Novamente
                                 </button>
@@ -135,16 +137,18 @@ if (isset($_GET['banner'])) {
                         <div class="banner-preview-container model-preview">
                             <div class="banner-loading-overlay" id="model-loading-<?php echo $i; ?>">
                                 <div class="loading-spinner"></div>
-                                <span>Carregando...</span>
+                                <span>Carregando modelo...</span>
                             </div>
-                            <img data-src="gerar_fut<?php echo $i > 1 ? '_' . $i : ''; ?>.php?grupo=0&t=<?php echo time(); ?>" 
+                            <img src="gerar_fut<?php echo $i > 1 ? '_' . $i : ''; ?>.php?grupo=0&cache_bust=<?php echo time(); ?>" 
                                  alt="Prévia do Banner <?php echo $i; ?>" 
-                                 class="banner-preview-image model-img lazy-load"
+                                 class="banner-preview-image model-img"
                                  data-model="<?php echo $i; ?>"
-                                 style="display: none;">
+                                 style="display: none;"
+                                 onload="handleModelLoad(this, <?php echo $i; ?>)"
+                                 onerror="handleModelError(this, <?php echo $i; ?>)">
                             <div class="banner-error-overlay" id="model-error-<?php echo $i; ?>" style="display: none;">
                                 <i class="fas fa-exclamation-triangle"></i>
-                                <span>Erro ao carregar</span>
+                                <span>Erro ao carregar modelo</span>
                                 <button class="retry-btn" onclick="retryLoadModel(<?php echo $i; ?>)">
                                     <i class="fas fa-redo"></i> Tentar Novamente
                                 </button>
@@ -353,85 +357,69 @@ if (isset($_GET['banner'])) {
 
 <script>
 // Variáveis globais para controle
-let totalImages = 0;
-let loadedImages = 0;
 let imageRetryCount = {};
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 DOM carregado, inicializando sistema...');
+    console.log('🚀 Sistema de carregamento inicializado');
     
-    // Verificar qual página estamos
+    // Inicializar contadores de retry
     const bannerImages = document.querySelectorAll('.banner-img');
     const modelImages = document.querySelectorAll('.model-img');
     
-    console.log('🖼️ Banners encontrados:', bannerImages.length);
-    console.log('🎨 Modelos encontrados:', modelImages.length);
+    bannerImages.forEach((img, index) => {
+        imageRetryCount[`banner-${index}`] = 0;
+    });
     
-    if (bannerImages.length > 0) {
-        // Página de visualização de banners
-        totalImages = bannerImages.length;
-        console.log('📊 Iniciando carregamento de', totalImages, 'banners');
-        
-        // Configurar lazy loading para banners
-        bannerImages.forEach((img, index) => {
-            console.log('🔧 Configurando banner', index);
-            imageRetryCount[`banner-${index}`] = 0;
-            loadImageLazy(img, index, 'banner');
-        });
-        
-    } else if (modelImages.length > 0) {
-        // Página de seleção de modelos
-        totalImages = modelImages.length;
-        console.log('📊 Iniciando carregamento de', totalImages, 'modelos');
-        
-        // Configurar lazy loading para modelos
-        modelImages.forEach((img, index) => {
-            console.log('🔧 Configurando modelo', index + 1);
-            imageRetryCount[`model-${index + 1}`] = 0;
-            loadImageLazy(img, index + 1, 'model');
-        });
-    } else {
-        console.log('ℹ️ Nenhuma imagem encontrada para carregar');
-    }
+    modelImages.forEach((img, index) => {
+        imageRetryCount[`model-${index + 1}`] = 0;
+    });
+    
+    console.log('📊 Imagens encontradas:', {
+        banners: bannerImages.length,
+        modelos: modelImages.length
+    });
 });
 
-// Função para carregar imagem com lazy loading
-function loadImageLazy(img, index, type) {
-    const dataSrc = img.getAttribute('data-src');
-    if (!dataSrc) {
-        console.error('❌ data-src não encontrado para', type, index);
-        handleImageError(img, index, type);
-        return;
-    }
+// Handlers para banners
+function handleImageLoad(img, index) {
+    console.log('✅ Banner carregado:', index);
     
-    // Criar nova imagem para pré-carregamento
-    const tempImg = new Image();
+    const loadingElement = document.getElementById(`loading-${index}`);
+    if (loadingElement) loadingElement.style.display = 'none';
     
-    // Timeout para cada imagem individual
-    const timeout = setTimeout(() => {
-        console.log('⏰ Timeout para', type, index);
-        handleImageError(img, index, type);
-    }, 15000); // 15 segundos por imagem
+    img.style.display = 'block';
+    img.style.opacity = '1';
+}
+
+function handleImageError(img, index) {
+    console.log('❌ Erro no banner:', index);
     
-    tempImg.onload = function() {
-        clearTimeout(timeout);
-        console.log('✅', type, 'carregado:', index);
-        img.src = dataSrc;
-        handleImageLoad(img, index, type);
-    };
+    const loadingElement = document.getElementById(`loading-${index}`);
+    const errorElement = document.getElementById(`error-${index}`);
     
-    tempImg.onerror = function() {
-        clearTimeout(timeout);
-        console.log('❌ Erro no', type, ':', index);
-        handleImageError(img, index, type);
-    };
+    if (loadingElement) loadingElement.style.display = 'none';
+    if (errorElement) errorElement.style.display = 'flex';
+}
+
+// Handlers para modelos
+function handleModelLoad(img, index) {
+    console.log('✅ Modelo carregado:', index);
     
-    // Adicionar timestamp único para evitar cache
-    const separator = dataSrc.includes('?') ? '&' : '?';
-    const uniqueUrl = dataSrc + separator + 'cache_bust=' + Date.now() + '&retry=' + (imageRetryCount[`${type}-${index}`] || 0);
+    const loadingElement = document.getElementById(`model-loading-${index}`);
+    if (loadingElement) loadingElement.style.display = 'none';
     
-    console.log('🔄 Carregando', type, index, ':', uniqueUrl);
-    tempImg.src = uniqueUrl;
+    img.style.display = 'block';
+    img.style.opacity = '1';
+}
+
+function handleModelError(img, index) {
+    console.log('❌ Erro no modelo:', index);
+    
+    const loadingElement = document.getElementById(`model-loading-${index}`);
+    const errorElement = document.getElementById(`model-error-${index}`);
+    
+    if (loadingElement) loadingElement.style.display = 'none';
+    if (errorElement) errorElement.style.display = 'flex';
 }
 
 // Função para tentar novamente carregar uma imagem
@@ -447,8 +435,9 @@ function retryLoadImage(index) {
         if (errorElement) errorElement.style.display = 'none';
         if (loadingElement) loadingElement.style.display = 'flex';
         
-        // Tentar carregar novamente
-        loadImageLazy(img, index, 'banner');
+        // Recarregar com novo cache bust
+        const baseSrc = img.src.split('&cache_bust=')[0];
+        img.src = baseSrc + '&cache_bust=' + Date.now() + '&retry=' + imageRetryCount[`banner-${index}`];
     }
 }
 
@@ -465,40 +454,17 @@ function retryLoadModel(index) {
         if (errorElement) errorElement.style.display = 'none';
         if (loadingElement) loadingElement.style.display = 'flex';
         
-        // Tentar carregar novamente
-        loadImageLazy(img, index, 'model');
+        // Recarregar com novo cache bust
+        const baseSrc = img.src.split('&cache_bust=')[0];
+        img.src = baseSrc + '&cache_bust=' + Date.now() + '&retry=' + imageRetryCount[`model-${index}`];
     }
 }
 
-// Handler unificado para carregamento de imagem
-function handleImageLoad(img, index, type) {
-    loadedImages++;
-    
-    console.log('✅', type, 'carregado:', index, '- Total:', loadedImages, '/', totalImages);
-    
-    // Esconder loading e mostrar imagem
-    const loadingElement = document.getElementById(`${type === 'banner' ? 'loading' : 'model-loading'}-${index}`);
-    if (loadingElement) loadingElement.style.display = 'none';
-    
-    img.style.display = 'block';
-    img.style.opacity = '1';
-}
-
-// Handler unificado para erro de imagem
-function handleImageError(img, index, type) {
-    loadedImages++;
-    
-    console.log('❌ Erro no', type, ':', index);
-    
-    // Mostrar erro
-    const loadingElement = document.getElementById(`${type === 'banner' ? 'loading' : 'model-loading'}-${index}`);
-    const errorElement = document.getElementById(`${type === 'banner' ? 'error' : 'model-error'}-${index}`);
-    
-    if (loadingElement) loadingElement.style.display = 'none';
-    if (errorElement) errorElement.style.display = 'flex';
-}
-
-// Expor funções globalmente para os botões de retry
+// Expor funções globalmente
+window.handleImageLoad = handleImageLoad;
+window.handleImageError = handleImageError;
+window.handleModelLoad = handleModelLoad;
+window.handleModelError = handleModelError;
 window.retryLoadImage = retryLoadImage;
 window.retryLoadModel = retryLoadModel;
 

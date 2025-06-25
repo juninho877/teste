@@ -39,13 +39,13 @@ function carregarImagemDeUrl(string $url, int $maxSize) {
         CURLOPT_RETURNTRANSFER => 1,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_CONNECTTIMEOUT => 2,  // Reduzido para 2 segundos
-        CURLOPT_TIMEOUT => 5,         // Reduzido para 5 segundos
+        CURLOPT_CONNECTTIMEOUT => 10,  // Aumentado para 10 segundos
+        CURLOPT_TIMEOUT => 30,         // Aumentado para 30 segundos
         CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; FutBanner/1.0)',
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_MAXREDIRS => 3,       // Limitar redirecionamentos
-        CURLOPT_FRESH_CONNECT => true, // Forçar nova conexão
-        CURLOPT_FORBID_REUSE => true   // Não reutilizar conexão
+        CURLOPT_MAXREDIRS => 5,
+        CURLOPT_ENCODING => '',        // Aceitar compressão
+        CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4, // Forçar IPv4
     ]);
     
     $imageContent = curl_exec($ch);
@@ -88,12 +88,12 @@ function carregarLogoCanalComAlturaFixa(string $url, int $alturaFixa = 50) {
         CURLOPT_RETURNTRANSFER => 1,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_CONNECTTIMEOUT => 2,
-        CURLOPT_TIMEOUT => 5,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_TIMEOUT => 30,
         CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; FutBanner/1.0)',
-        CURLOPT_MAXREDIRS => 3,
-        CURLOPT_FRESH_CONNECT => true,
-        CURLOPT_FORBID_REUSE => true
+        CURLOPT_MAXREDIRS => 5,
+        CURLOPT_ENCODING => '',
+        CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
     ]);
     
     $imageContent = curl_exec($ch);
@@ -184,8 +184,8 @@ function getChaveRemota() {
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Content-Length: ' . strlen($postData)]);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $postData); 
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
     
     $response = curl_exec($ch);
     curl_close($ch);
@@ -256,8 +256,8 @@ function obterJogosDeHoje() {
         $ch = curl_init($json_url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
         $json_content = curl_exec($ch);
         curl_close($ch);
         
