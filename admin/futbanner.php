@@ -111,7 +111,8 @@ if (isset($_GET['banner'])) {
         </div>
     </div>
 <?php else: ?>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Grid com 2 colunas em telas grandes -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <?php foreach ($gruposDeJogos as $index => $grupo): ?>
             <div class="card">
                 <div class="card-header">
@@ -157,6 +158,7 @@ if (isset($_GET['banner'])) {
         </div>
     </div>
 <?php else: ?>
+    <!-- Grid com 4 colunas em telas extra grandes para os modelos -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <?php for ($i = 1; $i <= 3; $i++): ?>
             <div class="card group hover:shadow-xl transition-all duration-300">
@@ -185,238 +187,8 @@ if (isset($_GET['banner'])) {
 } // Fim do if/else principal
 ?>
 
-<!-- Modal de Progresso -->
-<div id="progressModal" class="modal-overlay">
-    <div class="modal-container">
-        <div class="modal-header">
-            <h3 class="modal-title">
-                <i class="fas fa-magic text-primary-500"></i>
-                <span id="modalTitle">Carregando Prévias</span>
-            </h3>
-            <p class="modal-subtitle" id="modalSubtitle">Aguarde enquanto preparamos as prévias...</p>
-        </div>
-        
-        <div class="modal-body">
-            <div class="progress-info">
-                <div class="progress-text">
-                    <span id="progressText">Iniciando...</span>
-                    <span id="progressPercent">0%</span>
-                </div>
-                <div class="progress-bar">
-                    <div id="progressFill" class="progress-fill"></div>
-                </div>
-            </div>
-            
-            <div id="itemsStatus" class="items-status">
-                <!-- Items serão adicionados dinamicamente -->
-            </div>
-        </div>
-        
-        <?php if (!isset($_GET['banner'])): ?>
-        <div class="modal-footer">
-            <button id="skipBtn" class="btn btn-secondary w-full">
-                <i class="fas fa-forward"></i>
-                Pular Prévias e Escolher Modelo
-            </button>
-        </div>
-        <?php endif; ?>
-    </div>
-</div>
-
 <style>
-    /* Modal Overlay - Posicionamento fixo para cobrir toda a tela */
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.8);
-        backdrop-filter: blur(4px);
-        z-index: 999999;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s ease;
-    }
-
-    .modal-overlay.show {
-        display: flex;
-        opacity: 1;
-        visibility: visible;
-    }
-
-    /* Modal Container - Centralizado */
-    .modal-container {
-        background: var(--bg-primary);
-        border-radius: 16px;
-        box-shadow: var(--shadow-xl);
-        border: 1px solid var(--border-color);
-        width: 90%;
-        max-width: 600px;
-        max-height: 90vh;
-        overflow-y: auto;
-        transform: scale(0.9) translateY(20px);
-        transition: all 0.3s ease;
-        position: relative;
-    }
-
-    .modal-overlay.show .modal-container {
-        transform: scale(1) translateY(0);
-    }
-
-    /* Modal Header */
-    .modal-header {
-        padding: 2rem 2rem 1rem;
-        border-bottom: 1px solid var(--border-color);
-        text-align: center;
-    }
-
-    .modal-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--text-primary);
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.75rem;
-    }
-
-    .modal-subtitle {
-        color: var(--text-secondary);
-        font-size: 0.875rem;
-    }
-
-    /* Modal Body */
-    .modal-body {
-        padding: 2rem;
-    }
-
-    /* Progress Info */
-    .progress-info {
-        margin-bottom: 2rem;
-    }
-
-    .progress-text {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.75rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-
-    .progress-bar {
-        width: 100%;
-        height: 8px;
-        background: var(--bg-tertiary);
-        border-radius: 4px;
-        overflow: hidden;
-    }
-
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
-        border-radius: 4px;
-        width: 0%;
-        transition: width 0.3s ease;
-    }
-
-    /* Status Items */
-    .items-status {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .status-item {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        background: var(--bg-secondary);
-        border-radius: 12px;
-        border: 1px solid var(--border-color);
-        transition: all 0.3s ease;
-    }
-
-    .status-icon {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        background: var(--bg-tertiary);
-    }
-
-    .status-info {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .status-title {
-        font-weight: 600;
-        color: var(--text-primary);
-        font-size: 0.875rem;
-    }
-
-    .status-subtitle {
-        color: var(--text-muted);
-        font-size: 0.75rem;
-    }
-
-    .status-indicator {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .status-text {
-        font-size: 0.75rem;
-        font-weight: 500;
-        color: var(--text-secondary);
-    }
-
-    /* Status States */
-    .status-loading .status-icon {
-        background: var(--primary-50);
-    }
-
-    .status-loading .status-icon i {
-        color: var(--primary-500);
-        animation: spin 1s linear infinite;
-    }
-
-    .status-success .status-icon {
-        background: var(--success-50);
-    }
-
-    .status-success .status-icon i {
-        color: var(--success-500);
-    }
-
-    .status-error .status-icon {
-        background: var(--danger-50);
-    }
-
-    .status-error .status-icon i {
-        color: var(--danger-500);
-    }
-
-    /* Modal Footer */
-    .modal-footer {
-        padding: 1rem 2rem 2rem;
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-    }
-
-    /* Banner Preview Styles */
+    /* Banner Preview Styles - Tamanho controlado */
     .banner-preview-container {
         position: relative;
         width: 100%;
@@ -437,41 +209,8 @@ if (isset($_GET['banner'])) {
         transition: opacity 0.3s ease;
     }
 
-    /* Responsive */
-    @media (max-width: 768px) {
-        .modal-container {
-            width: 95%;
-            margin: 1rem;
-        }
-
-        .modal-header,
-        .modal-body,
-        .modal-footer {
-            padding: 1.5rem;
-        }
-
-        .status-item {
-            padding: 0.75rem;
-        }
-    }
-
-    /* Animations */
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-
-    /* Dark theme adjustments */
-    [data-theme="dark"] .modal-overlay {
-        background: rgba(0, 0, 0, 0.9);
-    }
-
-    [data-theme="dark"] .text-gray-300 {
-        color: var(--text-muted);
-    }
-
-    [data-theme="dark"] .text-warning-500 {
-        color: #f59e0b;
+    .banner-preview-image[loading="lazy"] {
+        background: var(--bg-secondary);
     }
 
     /* Utility Classes */
@@ -485,190 +224,59 @@ if (isset($_GET['banner'])) {
     .mb-6 { margin-bottom: 1.5rem; }
     .mt-4 { margin-top: 1rem; }
     .w-full { width: 100%; }
+
+    /* Dark theme adjustments */
+    [data-theme="dark"] .text-gray-300 {
+        color: var(--text-muted);
+    }
+
+    [data-theme="dark"] .text-warning-500 {
+        color: #f59e0b;
+    }
+
+    /* Loading state */
+    .banner-preview-image {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill='%23e2e8f0'%3E%3Ccircle cx='50' cy='50' r='4'%3E%3Canimate attributeName='opacity' values='1;0;1' dur='1s' repeatCount='indefinite'/%3E%3C/circle%3E%3Ccircle cx='30' cy='50' r='4'%3E%3Canimate attributeName='opacity' values='1;0;1' dur='1s' begin='0.2s' repeatCount='indefinite'/%3E%3C/circle%3E%3Ccircle cx='70' cy='50' r='4'%3E%3Canimate attributeName='opacity' values='1;0;1' dur='1s' begin='0.4s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 50px 50px;
+    }
+
+    .banner-preview-image[src] {
+        background-image: none;
+    }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('progressModal');
+    // Simples e eficaz - sem complicações
     const images = document.querySelectorAll('.banner-preview-image');
     
-    let loadedCount = 0;
-    let totalImages = images.length;
-    let isSkipped = false;
-    
-    if (totalImages === 0) return;
-    
-    // Configurar modal baseado na página
-    <?php if (isset($_GET['banner'])): ?>
-        setupBannerModal();
-    <?php else: ?>
-        setupModelModal();
-    <?php endif; ?>
-    
-    // Mostrar modal
-    showModal();
-    
-    // Configurar carregamento das imagens
-    images.forEach((img, index) => {
-        const timeout = setTimeout(() => {
-            if (!img.complete && !isSkipped) {
-                updateItemStatus(index, 'error');
-                loadedCount++;
-                updateProgress();
+    images.forEach(function(img) {
+        // Timeout para mostrar erro se demorar muito
+        const timeout = setTimeout(function() {
+            if (!img.complete) {
+                img.style.opacity = '0.5';
+                img.alt = 'Erro ao carregar banner';
             }
-        }, 60000); // 60 segundos timeout
+        }, 10000); // 10 segundos
         
         img.addEventListener('load', function() {
             clearTimeout(timeout);
-            if (!isSkipped) {
-                updateItemStatus(index, 'success');
-                loadedCount++;
-                updateProgress();
-            }
+            img.style.opacity = '1';
         });
         
         img.addEventListener('error', function() {
             clearTimeout(timeout);
-            if (!isSkipped) {
-                updateItemStatus(index, 'error');
-                loadedCount++;
-                updateProgress();
-            }
+            img.style.opacity = '0.5';
+            img.alt = 'Erro ao carregar banner';
         });
-        
-        // Iniciar carregamento
-        updateItemStatus(index, 'loading');
     });
     
-    // Botão pular (apenas na página de modelos)
-    const skipBtn = document.getElementById('skipBtn');
-    if (skipBtn) {
-        skipBtn.addEventListener('click', function() {
-            skipLoading();
-        });
-    }
-    
-    // Permitir navegação livre
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('a[href]') && !e.target.closest('#progressModal')) {
-            skipLoading();
-        }
+    // Permitir navegação livre - sem travamentos
+    window.addEventListener('beforeunload', function() {
+        // Não fazer nada que possa travar
     });
-    
-    // Fechar modal clicando no overlay
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            skipLoading();
-        }
-    });
-    
-    function showModal() {
-        modal.classList.add('show');
-    }
-    
-    function hideModal() {
-        modal.classList.remove('show');
-    }
-    
-    function skipLoading() {
-        isSkipped = true;
-        hideModal();
-    }
-    
-    function setupBannerModal() {
-        document.getElementById('modalTitle').textContent = 'Carregando Banners';
-        document.getElementById('modalSubtitle').textContent = 'Aguarde enquanto preparamos seus banners...';
-        
-        const statusContainer = document.getElementById('itemsStatus');
-        statusContainer.innerHTML = '';
-        
-        <?php foreach ($gruposDeJogos as $index => $grupo): ?>
-            const item<?php echo $index; ?> = createStatusItem(
-                <?php echo $index; ?>,
-                'Banner Parte <?php echo $index + 1; ?>',
-                '<?php echo count($grupo); ?> jogos'
-            );
-            statusContainer.appendChild(item<?php echo $index; ?>);
-        <?php endforeach; ?>
-    }
-    
-    function setupModelModal() {
-        document.getElementById('modalTitle').textContent = 'Carregando Prévias dos Modelos';
-        document.getElementById('modalSubtitle').textContent = 'Aguarde enquanto preparamos as prévias...';
-        
-        const statusContainer = document.getElementById('itemsStatus');
-        statusContainer.innerHTML = '';
-        
-        <?php for ($i = 1; $i <= 3; $i++): ?>
-            const model<?php echo $i; ?> = createStatusItem(
-                <?php echo $i - 1; ?>,
-                'Banner Modelo <?php echo $i; ?>',
-                'Estilo profissional'
-            );
-            statusContainer.appendChild(model<?php echo $i; ?>);
-        <?php endfor; ?>
-    }
-    
-    function createStatusItem(index, title, subtitle) {
-        const item = document.createElement('div');
-        item.className = 'status-item';
-        item.id = `status-item-${index}`;
-        item.innerHTML = `
-            <div class="status-icon">
-                <i class="fas fa-clock text-gray-400"></i>
-            </div>
-            <div class="status-info">
-                <span class="status-title">${title}</span>
-                <span class="status-subtitle">${subtitle}</span>
-            </div>
-            <div class="status-indicator">
-                <span class="status-text">Aguardando</span>
-            </div>
-        `;
-        return item;
-    }
-    
-    function updateProgress() {
-        const percent = Math.round((loadedCount / totalImages) * 100);
-        document.getElementById('progressText').textContent = `Carregando ${loadedCount + 1} de ${totalImages}`;
-        document.getElementById('progressPercent').textContent = `${percent}%`;
-        document.getElementById('progressFill').style.width = `${percent}%`;
-        
-        if (loadedCount >= totalImages) {
-            setTimeout(() => {
-                hideModal();
-            }, 1000);
-        }
-    }
-    
-    function updateItemStatus(index, status) {
-        const statusItem = document.getElementById(`status-item-${index}`);
-        if (!statusItem) return;
-        
-        statusItem.className = `status-item status-${status}`;
-        const icon = statusItem.querySelector('.status-icon i');
-        const text = statusItem.querySelector('.status-text');
-        
-        switch (status) {
-            case 'loading':
-                icon.className = 'fas fa-spinner';
-                text.textContent = 'Carregando...';
-                break;
-            case 'success':
-                icon.className = 'fas fa-check-circle';
-                text.textContent = 'Concluído';
-                break;
-            case 'error':
-                icon.className = 'fas fa-times-circle';
-                text.textContent = 'Erro';
-                break;
-        }
-    }
-});
-
-// Permitir navegação livre - sem travamentos
-window.addEventListener('beforeunload', function() {
-    // Não fazer nada que possa travar
 });
 </script>
 
