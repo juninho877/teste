@@ -1,54 +1,88 @@
-</div> <div id="overlay"></div>
-    
-</div> <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const menuToggleButton = document.getElementById('menu-toggle-button');
-        const overlay = document.getElementById('overlay');
+</div>
+        </main>
+    </div>
+
+    <!-- Overlay for mobile -->
+    <div class="overlay" id="overlay"></div>
+
+    <script>
+        // Theme Management
+        const themeToggle = document.getElementById('themeToggle');
         const body = document.body;
+        const themeIcon = themeToggle.querySelector('i');
 
-        function toggleMenu() {
-            body.classList.toggle('sidebar-open');
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        body.setAttribute('data-theme', savedTheme);
+        updateThemeIcon(savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        });
+
+        function updateThemeIcon(theme) {
+            themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
         }
 
-        if(menuToggleButton) {
-            menuToggleButton.addEventListener('click', toggleMenu);
+        // Mobile Menu Management
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('mainContent');
+        const overlay = document.getElementById('overlay');
+
+        mobileMenuBtn.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', closeSidebar);
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+            mainContent.classList.toggle('expanded');
         }
-        if(overlay) {
-            overlay.addEventListener('click', toggleMenu);
+
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+            mainContent.classList.remove('expanded');
         }
+
+        // Active Navigation Item
+        const currentPage = window.location.pathname.split('/').pop() || 'index.php';
+        const navItems = document.querySelectorAll('.nav-item');
         
-        const currentPage = window.location.pathname.split('/').pop();
-        const menuItems = document.querySelectorAll('#sidebar-content .sidebar-item');
-        
-        let hasActive = false;
-        menuItems.forEach(item => {
+        navItems.forEach(item => {
             item.classList.remove('active');
-            if (item.getAttribute('href') === currentPage) {
+            const href = item.getAttribute('href');
+            if (href === currentPage || (currentPage === '' && href === 'index.php')) {
                 item.classList.add('active');
-                hasActive = true;
             }
         });
 
-        if (!hasActive && (currentPage === '' || currentPage === 'index.php')) {
-            const dashboardItem = document.querySelector('#sidebar-content a[href="index.php"]');
-            if(dashboardItem) {
-                dashboardItem.classList.add('active');
+        // Close sidebar on window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 1024) {
+                closeSidebar();
             }
-        }
-    });
+        });
 
-    // --- NOVA CORREÇÃO ADICIONADA AQUI ---
-    // Força o fechamento de modais do SweetAlert ao usar o botão "Voltar" do navegador.
-    window.addEventListener('pageshow', function (event) {
-        // A propriedade 'persisted' é true se a página foi restaurada do bfcache.
-        if (event.persisted) {
-            // Se a biblioteca SweetAlert2 existir e um modal estiver visível, feche-o.
-            if (typeof Swal !== 'undefined' && Swal.isVisible()) {
+        // Smooth animations for page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const contentArea = document.querySelector('.content-area');
+            if (contentArea) {
+                contentArea.classList.add('animate-slide-in');
+            }
+        });
+
+        // Handle SweetAlert modal cleanup on page navigation
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted && typeof Swal !== 'undefined' && Swal.isVisible()) {
                 Swal.close();
             }
-        }
-    });
-</script>
-
+        });
+    </script>
 </body>
 </html>

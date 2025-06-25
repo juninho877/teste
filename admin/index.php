@@ -1,8 +1,5 @@
 <?php
-// Inicia a sessão para que possamos usar a variável $_SESSION["usuario"]
 session_start();
-
-// Se o usuário não estiver logado, redireciona para a página de login
 if (!isset($_SESSION["usuario"])) {
     header("Location: login.php");
     exit();
@@ -12,143 +9,154 @@ $pageTitle = "Página Inicial";
 include "includes/header.php";
 ?>
 
-<style>
-    /* Reset e Estilos Globais */
-    * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-    }
+<div class="page-header">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">Bem-vindo de volta, <?php echo htmlspecialchars($_SESSION["usuario"]); ?>! Gerencie seus banners e configurações.</p>
+</div>
 
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        /* Mantém o mesmo fundo da página de login para consistência */
-        background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1579952363873-27f3bade9f55');
-        background-position: center;
-        background-size: cover;
-        background-attachment: fixed;
-        min-height: 100vh;
-        /* Centraliza o container principal */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 20px;
-    }
-
-    /* Container principal com efeito de vidro */
-    .dashboard-container {
-        width: 100%;
-        max-width: 800px; /* Maior para acomodar o grid */
-        padding: 40px;
-        background: rgba(0, 0, 0, 0.4);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border-radius: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        text-align: center;
-        color: #fff;
-    }
-
-    /* Cabeçalho de boas-vindas */
-    .dashboard-header {
-        margin-bottom: 40px;
-    }
-
-    .dashboard-header h1 {
-        font-size: 2.5rem;
-        font-weight: 600;
-        margin-bottom: 5px;
-    }
-
-    .dashboard-header p {
-        font-size: 1.1rem;
-        color: #ccc;
-    }
-    
-    /* Novo Layout em Grid para os botões */
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr); /* 2 colunas por padrão */
-        gap: 25px; /* Espaçamento entre os cards */
-    }
-
-    /* Estilo dos "Cards de Ação" */
-    .card-link {
-        display: block;
-        padding: 30px 20px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        text-decoration: none;
-        color: #fff;
-        transition: all 0.3s ease;
-    }
-
-    .card-link:hover {
-        transform: translateY(-5px);
-        background: rgba(255, 255, 255, 0.2);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-    }
-
-    .card-link i {
-        font-size: 2.5rem; /* Ícones maiores */
-        margin-bottom: 15px;
-        display: block;
-        color: #28a745; /* Cor de destaque verde */
-    }
-
-    .card-link span {
-        font-size: 1.1rem;
-        font-weight: 500;
-    }
-    
-    /* Cor especial para o botão de Deslogar */
-    .card-link.logout i {
-        color: #e74c3c;
-    }
-
-    /* Layout responsivo para telas menores */
-    @media (max-width: 768px) {
-        .dashboard-container {
-            padding: 30px;
-        }
-        .dashboard-header h1 {
-            font-size: 2rem;
-        }
-        /* Muda o grid para 1 coluna em telas de celular */
-        .dashboard-grid {
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-    }
-
-</style>
-
-<div class="dashboard-container">
-    <div class="dashboard-header">
-        <h1>Bem-vindo, <?php echo htmlspecialchars($_SESSION["usuario"]); ?>!</h1>
-        <p>O que você gostaria de fazer hoje?</p>
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+    <div class="card">
+        <div class="card-body">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-muted">Banners Gerados</p>
+                    <p class="text-2xl font-bold text-primary">156</p>
+                </div>
+                <div class="w-12 h-12 bg-primary-50 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-image text-primary-500"></i>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="dashboard-grid">
-        <a href="painel.php" class="card-link">
-            <i class="fas fa-film"></i>
-            <span>Banner Filmes e Séries</span>
-        </a>
-        <a href="futbanner.php" class="card-link">
-            <i class="fas fa-futbol"></i>
-            <span>Banner Fut</span>
-        </a>
-        <a href="setting.php" class="card-link">
-            <i class="fas fa-cog"></i>
-            <span>Credenciais</span>
-        </a>
-        <a href="logout.php" class="card-link logout">
-            <i class="fas fa-sign-out-alt"></i>
-            <span>Sair</span>
-        </a>
+    <div class="card">
+        <div class="card-body">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-muted">Jogos Hoje</p>
+                    <p class="text-2xl font-bold text-success-500">12</p>
+                </div>
+                <div class="w-12 h-12 bg-success-50 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-futbol text-success-500"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-muted">Último Acesso</p>
+                    <p class="text-2xl font-bold text-warning-500"><?php echo date('H:i'); ?></p>
+                </div>
+                <div class="w-12 h-12 bg-warning-50 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-clock text-warning-500"></i>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<!-- Quick Actions -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Ações Rápidas</h3>
+            <p class="card-subtitle">Acesse rapidamente as funcionalidades principais</p>
+        </div>
+        <div class="card-body">
+            <div class="grid grid-cols-1 gap-3">
+                <a href="painel.php" class="btn btn-primary">
+                    <i class="fas fa-film"></i>
+                    Gerar Banner Filme/Série
+                </a>
+                <a href="futbanner.php" class="btn btn-secondary">
+                    <i class="fas fa-futbol"></i>
+                    Gerar Banner Futebol
+                </a>
+                <a href="setting.php" class="btn btn-secondary">
+                    <i class="fas fa-cog"></i>
+                    Configurações
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Personalização</h3>
+            <p class="card-subtitle">Configure a aparência dos seus banners</p>
+        </div>
+        <div class="card-body">
+            <div class="grid grid-cols-1 gap-3">
+                <a href="logo.php" class="btn btn-secondary">
+                    <i class="fas fa-image"></i>
+                    Gerenciar Logos
+                </a>
+                <a href="background.php" class="btn btn-secondary">
+                    <i class="fas fa-photo-video"></i>
+                    Gerenciar Fundos
+                </a>
+                <a href="card.php" class="btn btn-secondary">
+                    <i class="fas fa-th-large"></i>
+                    Gerenciar Cards
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Atividade Recente</h3>
+        <p class="card-subtitle">Últimas ações realizadas no sistema</p>
+    </div>
+    <div class="card-body">
+        <div class="space-y-4">
+            <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                <div class="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-image text-primary-600 text-sm"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="font-medium">Banner gerado com sucesso</p>
+                    <p class="text-sm text-muted">Filme: Interestelar - há 2 horas</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                <div class="w-10 h-10 bg-success-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-futbol text-success-600 text-sm"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="font-medium">Banner futebol criado</p>
+                    <p class="text-sm text-muted">5 jogos de hoje - há 3 horas</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                <div class="w-10 h-10 bg-warning-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-cog text-warning-600 text-sm"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="font-medium">Configurações atualizadas</p>
+                    <p class="text-sm text-muted">Logo alterado - há 1 dia</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    [data-theme="dark"] .bg-gray-50 {
+        background-color: var(--bg-tertiary);
+    }
+    
+    .space-y-4 > * + * {
+        margin-top: 1rem;
+    }
+</style>
 
 <?php include "includes/footer.php"; ?>

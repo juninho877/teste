@@ -9,168 +9,214 @@ $pageTitle = "Banner Filmes e Séries";
 include "includes/header.php"; 
 ?>
 
-<style>
-    /* Estilos de formulário padrão (reutilizados) */
-    .form-group { position: relative; margin-bottom: 20px; }
-    .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-muted); }
-    .input-field {
-        width: 100%; padding: 12px 15px; background: rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px;
-        color: #fff; font-size: 1em; transition: all 0.3s ease;
-    }
-    .input-field:focus { outline: none; border-color: var(--accent-color); }
-
-    /* --- NOVOS ESTILOS PARA O SELETOR CUSTOMIZADO --- */
-    .custom-select-wrapper {
-        position: relative;
-        width: 100%;
-    }
-    .custom-select-trigger {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 15px;
-        background: rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 8px;
-        color: #fff;
-        font-size: 1em;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    .custom-select-wrapper.open .custom-select-trigger {
-        border-color: var(--accent-color);
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-    }
-    .custom-options {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: #2c2f4a; /* Cor de fundo sólida para as opções */
-        border: 1px solid var(--accent-color);
-        border-top: none;
-        border-radius: 0 0 8px 8px;
-        z-index: 10;
-        opacity: 0;
-        visibility: hidden;
-        transform: translateY(-10px);
-        transition: all 0.3s ease;
-    }
-    .custom-select-wrapper.open .custom-options {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0);
-    }
-    .custom-option {
-        padding: 12px 15px;
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }
-    .custom-option:hover {
-        background-color: var(--accent-color);
-    }
-    .custom-option:not(:last-child) {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    /* Fim dos novos estilos */
-
-    .submit-btn {
-        width: 100%; padding: 12px 30px; border: none; border-radius: 8px;
-        background-color: var(--accent-color); color: #fff; font-size: 1.1em;
-        font-weight: bold; cursor: pointer; transition: all 0.3s ease;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .submit-btn i { margin-right: 8px; }
-    .submit-btn:hover { background-color: #3a5bbf; transform: translateY(-2px); }
-
-    .form-logo { max-width: 100px; margin: 0 auto 20px auto; opacity: 0.8; }
-</style>
-
 <div class="page-header">
-    <h1><i class="fas fa-film" style="color: var(--accent-color);"></i> Gerar Banner - Filme/Série</h1>
-    <p style="color: var(--text-muted);">Busque por um título para gerar seu banner personalizado.</p>
+    <h1 class="page-title">Gerar Banner - Filme/Série</h1>
+    <p class="page-subtitle">Busque por um título para gerar seu banner personalizado</p>
 </div>
 
-<div class="content-card" style="max-width: 500px; margin: 0 auto;">
-    <div style="text-align: center;">
-        <img src="./img/logo.png" alt="Logo" class="form-logo">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Search Form -->
+    <div class="lg:col-span-2">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Buscar Conteúdo</h3>
+                <p class="card-subtitle">Digite o nome do filme ou série que deseja criar o banner</p>
+            </div>
+            <div class="card-body">
+                <form action="buscar.php" method="GET" onsubmit="playClickSound()">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div class="form-group">
+                            <label for="query" class="form-label">
+                                <i class="fas fa-search mr-2"></i>
+                                Nome do Filme ou Série
+                            </label>
+                            <input type="text" id="query" name="query" class="form-input" placeholder="Ex: Interestelar, Breaking Bad..." required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="type" class="form-label">
+                                <i class="fas fa-film mr-2"></i>
+                                Tipo de Conteúdo
+                            </label>
+                            <select name="type" id="type" class="form-input form-select">
+                                <option value="filme">🎬 Filme</option>
+                                <option value="serie">📺 Série</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-6">
+                        <label for="ano_lancamento" class="form-label">
+                            <i class="fas fa-calendar mr-2"></i>
+                            Ano de Lançamento (Opcional)
+                        </label>
+                        <input type="number" id="ano_lancamento" name="ano_lancamento" class="form-input" placeholder="Ex: 2014" min="1900" max="2030">
+                        <p class="text-xs text-muted mt-1">Deixe em branco para buscar sem filtro de ano</p>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-full">
+                        <i class="fas fa-search"></i>
+                        Buscar e Gerar Banner
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 
-    <form action="buscar.php" method="GET" onsubmit="playClickSound()">
-        <div class="form-group">
-            <label for="query">Nome do Filme ou Série</label>
-            <input type="text" id="query" name="query" class="input-field" placeholder="Ex: Interestelar" required>
-        </div>
-        
-        <div class="form-group">
-            <label>Tipo</label>
-            <div class="custom-select-wrapper">
-                <input type="hidden" name="type" id="selected-type" value="filme">
-                
-                <div class="custom-select-trigger">
-                    <span id="selected-text">Filme</span>
-                    <i class="fas fa-chevron-down"></i>
-                </div>
-                
-                <div class="custom-options">
-                    <div class="custom-option" data-value="filme">Filme</div>
-                    <div class="custom-option" data-value="serie">Série</div>
+    <!-- Info Panel -->
+    <div class="space-y-6">
+        <!-- Tips Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">💡 Dicas de Busca</h3>
+            </div>
+            <div class="card-body">
+                <div class="space-y-3 text-sm">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-success-500 mt-0.5"></i>
+                        <div>
+                            <p class="font-medium">Use nomes originais</p>
+                            <p class="text-muted">Prefira títulos em inglês para melhores resultados</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-success-500 mt-0.5"></i>
+                        <div>
+                            <p class="font-medium">Especifique o ano</p>
+                            <p class="text-muted">Ajuda a encontrar o conteúdo correto</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-success-500 mt-0.5"></i>
+                        <div>
+                            <p class="font-medium">Verifique a ortografia</p>
+                            <p class="text-muted">Nomes corretos garantem melhores resultados</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <button type="submit" class="submit-btn">
-            <i class="fas fa-search"></i> Buscar Agora
-        </button>
-    </form>
+        <!-- Recent Searches -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">🕒 Buscas Recentes</h3>
+            </div>
+            <div class="card-body">
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-film text-primary-500"></i>
+                            <span class="text-sm">Interestelar</span>
+                        </div>
+                        <button class="text-xs text-primary-500 hover:text-primary-600">Usar</button>
+                    </div>
+                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-tv text-primary-500"></i>
+                            <span class="text-sm">Breaking Bad</span>
+                        </div>
+                        <button class="text-xs text-primary-500 hover:text-primary-600">Usar</button>
+                    </div>
+                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-film text-primary-500"></i>
+                            <span class="text-sm">The Matrix</span>
+                        </div>
+                        <button class="text-xs text-primary-500 hover:text-primary-600">Usar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📊 Estatísticas</h3>
+            </div>
+            <div class="card-body">
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-muted">Banners gerados hoje</span>
+                        <span class="font-semibold text-primary-600">12</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-muted">Total este mês</span>
+                        <span class="font-semibold text-success-600">156</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-muted">Mais buscado</span>
+                        <span class="font-semibold">Filmes</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <audio id="clickSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_12d3b003b2.mp3" preload="auto"></audio>
 
+<style>
+    [data-theme="dark"] .bg-gray-50 {
+        background-color: var(--bg-tertiary);
+    }
+    
+    .space-y-2 > * + * {
+        margin-top: 0.5rem;
+    }
+    
+    .space-y-3 > * + * {
+        margin-top: 0.75rem;
+    }
+    
+    .space-y-4 > * + * {
+        margin-top: 1rem;
+    }
+    
+    .space-y-6 > * + * {
+        margin-top: 1.5rem;
+    }
+    
+    .mr-2 {
+        margin-right: 0.5rem;
+    }
+    
+    .mt-0.5 {
+        margin-top: 0.125rem;
+    }
+    
+    .mt-1 {
+        margin-top: 0.25rem;
+    }
+    
+    .w-full {
+        width: 100%;
+    }
+</style>
+
 <script>
-    // Som do clique
     function playClickSound() {
-        document.getElementById('clickSound').play();
+        const sound = document.getElementById('clickSound');
+        if (sound) {
+            sound.play().catch(e => console.log('Audio play failed:', e));
+        }
     }
 
-    // Lógica para o novo seletor customizado
+    // Recent searches functionality
     document.addEventListener('DOMContentLoaded', function() {
-        const wrapper = document.querySelector('.custom-select-wrapper');
-        const trigger = document.querySelector('.custom-select-trigger');
-        const options = document.querySelectorAll('.custom-option');
-        const hiddenInput = document.getElementById('selected-type');
-        const selectedText = document.getElementById('selected-text');
-
-        // Abre/fecha o dropdown
-        trigger.addEventListener('click', () => {
-            wrapper.classList.toggle('open');
-        });
-
-        // Lógica de seleção de opção
-        options.forEach(option => {
-            option.addEventListener('click', function() {
-                // Atualiza o texto visível
-                selectedText.textContent = this.textContent;
-                
-                // Atualiza o valor do input oculto que será enviado
-                hiddenInput.value = this.getAttribute('data-value');
-                
-                // Fecha o dropdown
-                wrapper.classList.remove('open');
+        const useButtons = document.querySelectorAll('[data-search]');
+        const queryInput = document.getElementById('query');
+        
+        useButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const searchTerm = this.getAttribute('data-search');
+                if (queryInput && searchTerm) {
+                    queryInput.value = searchTerm;
+                    queryInput.focus();
+                }
             });
-        });
-
-        // Fecha o dropdown se clicar fora dele
-        window.addEventListener('click', function(e) {
-            if (!wrapper.contains(e.target)) {
-                wrapper.classList.remove('open');
-            }
         });
     });
 </script>
 
-<?php 
-include "includes/footer.php"; 
-?>
+<?php include "includes/footer.php"; ?>

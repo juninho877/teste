@@ -1,88 +1,21 @@
 <?php
-// Sua lógica PHP original, 100% preservada.
 session_start();
 if (!isset($_SESSION["usuario"])) {
     header("Location: login.php");
     exit();
 }
+
 $apiKey = 'ec8237f367023fbadd38ab6a1596b40c';
 $language = 'pt-BR';
 
 $pageTitle = "Resultados da Busca";
-// Inclui o cabeçalho do nosso novo template
 include "includes/header.php";
-?>
 
-<style>
-    .results-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 25px;
-    }
-    .result-card {
-        background: var(--card-bg);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-        text-align: center;
-        transition: all 0.3s ease;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-    }
-    .result-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-        border-color: var(--accent-color);
-    }
-    .poster-container {
-        width: 100%;
-        height: 300px;
-        background-color: #1a1a2d;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .poster-container img { width: 100%; height: 100%; object-fit: cover; }
-    .poster-container .no-poster-icon { font-size: 4rem; color: var(--text-muted); }
-
-    .info-container {
-        padding: 15px;
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
-    .info-container .text-content {
-        flex-grow: 1;
-    }
-    .info-container h3 {
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--text-color);
-        margin-bottom: 5px;
-    }
-    .info-container small { font-size: 0.85rem; color: var(--text-muted); }
-    .info-container form { margin-top: 15px; }
-
-    .generate-btn {
-        width: 100%; padding: 10px; font-size: 0.9rem; font-weight: bold;
-        color: #fff; background-color: var(--accent-color);
-        border: none; border-radius: 8px; cursor: pointer;
-        transition: background-color 0.3s;
-    }
-    .generate-btn:hover { background-color: #3a5bbf; }
-    .no-results { text-align: center; padding: 40px; color: var(--text-muted); }
-</style>
-
-<?php
-// O `if` para verificar se a busca foi feita.
 if (isset($_GET['query']) && !empty($_GET['query'])) {
     $query = urlencode($_GET['query']);
-    // Lógica para determinar o tipo, exatamente como no seu original.
-    $type = isset($_GET['type']) && $_GET['type'] == 'serie' ? 'serie' : 'filme'; // 'filme' como padrão
+    $type = isset($_GET['type']) && $_GET['type'] == 'serie' ? 'serie' : 'filme';
     $ano = isset($_GET['ano_lancamento']) ? intval($_GET['ano_lancamento']) : null;
     
-    // Montagem da URL, como no seu original.
     if ($type == 'serie') {
         $api_type = 'tv';
         $url = "https://api.themoviedb.org/3/search/tv?api_key=$apiKey&language=$language&query=$query";
@@ -95,89 +28,165 @@ if (isset($_GET['query']) && !empty($_GET['query'])) {
 
     @$response = file_get_contents($url);
     $data = $response ? json_decode($response, true) : null;
-    
-    // Exibição do cabeçalho da página
-    echo '<div class="page-header">';
-    echo '<h1>Resultados para: "' . htmlspecialchars(urldecode($_GET['query'])) . '"</h1>';
-    echo '</div>';
+?>
 
-    // O container principal para o conteúdo
-    echo '<div class="content-card">';
-    if ($data && !empty($data['results'])) {
-        echo "<div class='results-grid'>";
+<div class="page-header">
+    <h1 class="page-title">Resultados da Busca</h1>
+    <p class="page-subtitle">Encontramos os seguintes resultados para: <strong>"<?php echo htmlspecialchars(urldecode($_GET['query'])); ?>"</strong></p>
+</div>
 
-        // Loop para exibir os resultados, com a estrutura do seu form original
-        foreach ($data['results'] as $item) {
+<div class="mb-6">
+    <a href="painel.php" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i>
+        Nova Busca
+    </a>
+</div>
+
+<?php if ($data && !empty($data['results'])): ?>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <?php foreach ($data['results'] as $item): 
             $id = $item['id'];
             $title = $item['title'] ?? $item['name'];
             $posterPath = $item['poster_path'] ? "https://image.tmdb.org/t/p/w500" . $item['poster_path'] : null;
             $releaseDate = $item['release_date'] ?? $item['first_air_date'] ?? '';
             $year = $releaseDate ? substr($releaseDate, 0, 4) : '';
+            $overview = $item['overview'] ?? '';
+            $rating = $item['vote_average'] ?? 0;
+        ?>
+            <div class="card group hover:shadow-xl transition-all duration-300">
+                <div class="relative overflow-hidden">
+                    <?php if ($posterPath): ?>
+                        <img src="<?php echo $posterPath; ?>" alt="Poster de <?php echo htmlspecialchars($title); ?>" 
+                             class="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-300">
+                    <?php else: ?>
+                        <div class="w-full h-80 bg-gray-200 flex items-center justify-center">
+                            <i class="fas fa-image text-4xl text-gray-400"></i>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <!-- Rating Badge -->
+                    <?php if ($rating > 0): ?>
+                        <div class="absolute top-3 right-3 bg-black bg-opacity-75 text-white px-2 py-1 rounded-lg text-sm font-semibold">
+                            <i class="fas fa-star text-yellow-400 mr-1"></i>
+                            <?php echo number_format($rating, 1); ?>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <!-- Type Badge -->
+                    <div class="absolute top-3 left-3 bg-primary-500 text-white px-2 py-1 rounded-lg text-xs font-semibold uppercase">
+                        <?php echo $type === 'serie' ? 'Série' : 'Filme'; ?>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <h3 class="font-semibold text-lg mb-2 line-clamp-2"><?php echo htmlspecialchars($title); ?></h3>
+                    
+                    <?php if ($releaseDate): ?>
+                        <p class="text-sm text-muted mb-2">
+                            <i class="fas fa-calendar mr-1"></i>
+                            <?php echo date('d/m/Y', strtotime($releaseDate)); ?>
+                        </p>
+                    <?php endif; ?>
+                    
+                    <?php if ($overview): ?>
+                        <p class="text-sm text-muted mb-4 line-clamp-3"><?php echo htmlspecialchars(substr($overview, 0, 120)) . '...'; ?></p>
+                    <?php endif; ?>
+                    
+                    <form method="GET" action="gerar_banner.php" onsubmit="showLoading(event, this)" class="mt-auto">
+                        <input type="hidden" name="name" value="<?php echo htmlspecialchars($title, ENT_QUOTES); ?>">
+                        <input type="hidden" name="type" value="<?php echo $type === 'serie' ? 'serie' : 'filme'; ?>">
+                        <input type="hidden" name="year" value="<?php echo htmlspecialchars($year, ENT_QUOTES); ?>">
+                        <button type="submit" class="btn btn-primary w-full">
+                            <i class="fas fa-magic"></i>
+                            Gerar Banner
+                        </button>
+                    </form>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php else: ?>
+    <div class="card">
+        <div class="card-body text-center py-12">
+            <div class="mb-4">
+                <i class="fas fa-search text-6xl text-gray-300"></i>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Nenhum resultado encontrado</h3>
+            <p class="text-muted mb-6">Tente buscar com termos diferentes ou verifique a ortografia.</p>
+            <a href="painel.php" class="btn btn-primary">
+                <i class="fas fa-search"></i>
+                Fazer Nova Busca
+            </a>
+        </div>
+    </div>
+<?php endif; ?>
 
-            echo "<div class='result-card'>";
-            echo "<div class='poster-container'>";
-            if ($posterPath) {
-                echo "<img src='{$posterPath}' alt='Poster de {$title}'>";
-            } else {
-                echo "<i class='fas fa-image no-poster-icon'></i>";
-            }
-            echo "</div>";
+<?php else: ?>
+    <div class="card">
+        <div class="card-body text-center py-12">
+            <div class="mb-4">
+                <i class="fas fa-exclamation-triangle text-6xl text-warning-500"></i>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Busca inválida</h3>
+            <p class="text-muted mb-6">Por favor, realize uma busca válida na página anterior.</p>
+            <a href="painel.php" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i>
+                Voltar para Busca
+            </a>
+        </div>
+    </div>
+<?php endif; ?>
 
-            echo "<div class='info-container'>";
-            echo "<div class='text-content'>";
-            echo "<h3>" . htmlspecialchars($title) . "</h3>";
-            if ($releaseDate) {
-                echo "<small>Lançamento: " . htmlspecialchars($releaseDate) . "</small>";
-            }
-            echo "</div>"; // Fim de .text-content
-            
-            // FORMULÁRIO EXATAMENTE COMO O SEU ORIGINAL
-            echo "<form method='GET' action='gerar_banner.php' onsubmit='showLoading(event, this)'>";
-            echo "<input type='hidden' name='name' value='" . htmlspecialchars($title, ENT_QUOTES) . "'>";
-            echo "<input type='hidden' name='type' value='" . ($type == 'serie' ? 'serie' : 'filme') . "'>";
-            echo "<input type='hidden' name='year' value='" . htmlspecialchars($year, ENT_QUOTES) . "'>";
-            echo "<button type='submit' class='generate-btn'>Gerar Banner</button>";
-            echo "</form>";
-            
-            echo "</div>"; // Fim de .info-container
-            echo "</div>"; // Fim de .result-card
-        }
-
-        echo "</div>"; // Fim de .results-grid
-    } else {
-        echo "<div class='no-results'><i class='fas fa-search' style='font-size: 3rem; margin-bottom: 15px;'></i><p>Nenhum resultado encontrado.</p></div>";
+<style>
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
-    echo '</div>'; // Fim de .content-card
-
-} else {
-    echo '<div class="content-card no-results"><p>Por favor, realize uma busca na página anterior.</p></div>';
-}
-?>
+    
+    .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    [data-theme="dark"] .bg-gray-200 {
+        background-color: var(--bg-tertiary);
+    }
+    
+    [data-theme="dark"] .text-gray-300 {
+        color: var(--text-muted);
+    }
+    
+    [data-theme="dark"] .text-gray-400 {
+        color: var(--text-muted);
+    }
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     function showLoading(event, form) {
         event.preventDefault();
+        
         Swal.fire({
-            title: 'Aguarde...',
-            text: 'Estamos gerando seu banner!',
+            title: 'Gerando Banner',
+            text: 'Por favor, aguarde enquanto criamos seu banner personalizado...',
             icon: 'info',
             allowOutsideClick: false,
             showConfirmButton: false,
-            // Adicionando as cores do nosso tema ao SweetAlert
-            background: '#2c2f4a', 
-            color: '#f1f1f1',
+            background: document.body.getAttribute('data-theme') === 'dark' ? '#1e293b' : '#ffffff',
+            color: document.body.getAttribute('data-theme') === 'dark' ? '#f1f5f9' : '#1e293b',
             didOpen: () => {
                 Swal.showLoading();
             }
         });
+        
         setTimeout(() => {
             form.submit();
-        }, 1000); // Pequeno atraso para mostrar o efeito, como no seu original.
+        }, 1000);
     }
 </script>
 
-<?php 
-// Inclui o rodapé do nosso novo template
-include "includes/footer.php"; 
-?>
+<?php include "includes/footer.php"; ?>
