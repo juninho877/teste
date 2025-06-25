@@ -82,52 +82,6 @@ if (isset($_GET['banner'])) {
     }
 ?>
 
-<!-- Modal de Carregamento -->
-<div id="loadingModal" class="loading-modal">
-    <div class="loading-content">
-        <div class="loading-spinner"></div>
-        <h3>🏈 Carregando Banners</h3>
-        <p>Aguarde enquanto preparamos seus banners...</p>
-        <div class="loading-progress">
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
-            </div>
-            <span class="progress-text" id="progressText">Iniciando... 0%</span>
-        </div>
-        <div class="loading-steps" id="loadingSteps">
-            <div class="step" id="step1">
-                <i class="fas fa-circle-notch fa-spin"></i>
-                <span>Banner Modelo <?php echo $tipo_banner; ?></span>
-            </div>
-            <div class="step" id="step2">
-                <i class="fas fa-clock"></i>
-                <span>Banner Parte 1 - 5 jogos</span>
-                <small>Aguardando</small>
-            </div>
-            <div class="step" id="step3">
-                <i class="fas fa-clock"></i>
-                <span>Banner Parte 2 - 5 jogos</span>
-                <small>Aguardando</small>
-            </div>
-            <div class="step" id="step4">
-                <i class="fas fa-clock"></i>
-                <span>Banner Parte 3 - 5 jogos</span>
-                <small>Aguardando</small>
-            </div>
-            <div class="step" id="step5">
-                <i class="fas fa-clock"></i>
-                <span>Banner Parte 4 - 5 jogos</span>
-                <small>Aguardando</small>
-            </div>
-            <div class="step" id="step6">
-                <i class="fas fa-clock"></i>
-                <span>Banner Parte 6 - 4 jogos</span>
-                <small>Aguardando</small>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="page-header">
     <h1 class="page-title">Banners de Jogos de Hoje</h1>
     <p class="page-subtitle">Modelo <?php echo $tipo_banner; ?> - <?php echo count($jogos); ?> jogos disponíveis</p>
@@ -158,9 +112,9 @@ if (isset($_GET['banner'])) {
     </div>
 <?php else: ?>
     <!-- Grid com 2 colunas em telas grandes para os banners -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="banners-grid">
         <?php foreach ($gruposDeJogos as $index => $grupo): ?>
-            <div class="card">
+            <div class="banner-card">
                 <div class="card-header">
                     <h3 class="card-title">Banner Parte <?php echo $index + 1; ?></h3>
                     <p class="card-subtitle"><?php echo count($grupo); ?> jogos neste banner</p>
@@ -187,6 +141,43 @@ if (isset($_GET['banner'])) {
 } else {
     // Tela de seleção de modelo
 ?>
+
+<!-- Modal de Carregamento -->
+<div id="loadingModal" class="loading-modal">
+    <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <h3>🏈 Carregando Banners</h3>
+        <p>Aguarde enquanto preparamos seus banners...</p>
+        <div class="loading-progress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <span class="progress-text" id="progressText">Iniciando... 0%</span>
+        </div>
+        <div class="loading-steps" id="loadingSteps">
+            <div class="step" id="step1">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <span>Preparando Banner Modelo</span>
+                <small>Aguardando</small>
+            </div>
+            <div class="step" id="step2">
+                <i class="fas fa-clock"></i>
+                <span>Carregando Jogos</span>
+                <small>Aguardando</small>
+            </div>
+            <div class="step" id="step3">
+                <i class="fas fa-clock"></i>
+                <span>Gerando Banners</span>
+                <small>Aguardando</small>
+            </div>
+            <div class="step" id="step4">
+                <i class="fas fa-clock"></i>
+                <span>Finalizando</span>
+                <small>Aguardando</small>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="page-header">
     <h1 class="page-title">Escolha o Modelo de Banner</h1>
@@ -219,7 +210,7 @@ if (isset($_GET['banner'])) {
                              class="banner-preview-image"
                              loading="lazy">
                     </div>
-                    <a href="?banner=<?php echo $i; ?>" class="btn btn-primary w-full mt-4 group-hover:bg-primary-600" onclick="showLoadingModal()">
+                    <a href="?banner=<?php echo $i; ?>" class="btn btn-primary w-full mt-4 group-hover:bg-primary-600" onclick="showLoadingModal(event)">
                         <i class="fas fa-check"></i>
                         Usar este Modelo
                     </a>
@@ -251,7 +242,7 @@ if (isset($_GET['banner'])) {
     }
 
     .loading-modal.show {
-        display: flex;
+        display: flex !important;
     }
 
     .loading-content {
@@ -263,6 +254,7 @@ if (isset($_GET['banner'])) {
         text-align: center;
         box-shadow: var(--shadow-xl);
         border: 1px solid var(--border-color);
+        animation: slideUp 0.3s ease-out;
     }
 
     .loading-spinner {
@@ -362,7 +354,32 @@ if (isset($_GET['banner'])) {
         font-size: 0.75rem;
     }
 
-    /* Banner Preview Styles - Tamanho controlado para 2 por linha */
+    /* Grid para banners - 2 colunas em telas grandes */
+    .banners-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    @media (min-width: 1024px) {
+        .banners-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    .banner-card {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+    }
+
+    .banner-card:hover {
+        box-shadow: var(--shadow-md);
+    }
+
+    /* Banner Preview Styles */
     .banner-preview-container {
         position: relative;
         width: 100%;
@@ -427,8 +444,19 @@ if (isset($_GET['banner'])) {
     }
 
     @keyframes fadeIn {
-        from { opacity: 0; transform: scale(0.9); }
-        to { opacity: 1; transform: scale(1); }
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+        from { 
+            opacity: 0; 
+            transform: translateY(30px) scale(0.9); 
+        }
+        to { 
+            opacity: 1; 
+            transform: translateY(0) scale(1); 
+        }
     }
 
     /* Loading state for images */
@@ -471,11 +499,18 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Função para mostrar o modal de carregamento
-function showLoadingModal() {
+function showLoadingModal(event) {
+    event.preventDefault();
+    
     const modal = document.getElementById('loadingModal');
     const progressFill = document.getElementById('progressFill');
     const progressText = document.getElementById('progressText');
     const steps = document.querySelectorAll('.step');
+    
+    if (!modal) {
+        console.error('Modal não encontrado');
+        return;
+    }
     
     modal.classList.add('show');
     
@@ -489,9 +524,18 @@ function showLoadingModal() {
             progress = 100;
             clearInterval(interval);
             
-            // Simular conclusão
+            // Marcar último step como completo
+            if (currentStep < steps.length) {
+                steps[currentStep].classList.remove('active');
+                steps[currentStep].classList.add('completed');
+                steps[currentStep].querySelector('i').className = 'fas fa-check';
+                steps[currentStep].querySelector('small').textContent = 'Concluído';
+            }
+            
+            // Redirecionar após conclusão
             setTimeout(() => {
                 modal.classList.remove('show');
+                window.location.href = event.target.href;
             }, 1000);
         }
         
@@ -509,10 +553,13 @@ function showLoadingModal() {
             }
             
             steps[stepIndex].classList.add('active');
+            steps[stepIndex].querySelector('i').className = 'fas fa-circle-notch fa-spin';
             steps[stepIndex].querySelector('small').textContent = 'Processando...';
             currentStep = stepIndex + 1;
         }
     }, 200);
+    
+    return false;
 }
 </script>
 
